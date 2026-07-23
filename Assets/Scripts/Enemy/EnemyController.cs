@@ -26,9 +26,19 @@ public class EnemyController : BaseEntity
     private Vector2 roamTarget;          // 当前正在前往的巡逻目标点
     private float roamTimer;             // 发呆倒计时
 
-    [Header("Chase Settings")]
-    public float chaseSpeed = 5f;        // 发现玩家后的追击速度
-    public float loseTargetDistance = 12f;// 玩家逃出多远后放弃追击
+    [Header("Chase & Combat Settings")]
+    public float chaseSpeed = 5f;
+    public float loseTargetDistance = 12f;
+
+    // --- 新增的近战属性 ---
+    public Transform attackPoint;      // 怪物的攻击判定点
+    public float attackRange = 1.2f;   // 怪物的攻击半径 (通常比追击停止距离稍微大一点点)
+    public float stopDistance = 1f;    // 距离玩家多近时停下脚步砍人
+    public float attackDamage = 15f;   // 怪物攻击力
+    public float attackRate = 1f;      // 怪物攻击间隔
+    public LayerMask playerLayer;      // 玩家所在的图层
+
+    private float nextAttackTime = 0f;
 
     private Transform targetPlayer;
 
@@ -45,10 +55,7 @@ public class EnemyController : BaseEntity
         {
             targetPlayer = playerObj.transform;
         }
-        else
-        {
-            Debug.Log("怪物成功锁定玩家，开始巡逻！");
-        }
+
 
         // 随机生成第一个巡逻点
         PickNewRoamTarget();
@@ -121,13 +128,11 @@ public class EnemyController : BaseEntity
             rb.linearVelocity = Vector2.zero;
             roamTimer -= Time.fixedDeltaTime;
 
-            // 打印发呆状态
-            Debug.Log($"【排错】到达目标点，正在发呆... 剩余时间: {roamTimer:F1} 秒");
+
 
             if (roamTimer <= 0)
             {
                 PickNewRoamTarget();
-                Debug.Log($"【排错】发呆结束！生成了新的巡逻点: {roamTarget}");
             }
         }
         else
@@ -135,8 +140,7 @@ public class EnemyController : BaseEntity
             Vector2 direction = (roamTarget - rb.position).normalized;
             rb.linearVelocity = direction * roamSpeed;
 
-            // 打印移动状态
-            Debug.Log($"【排错】正在走向目标 {roamTarget} | 当前速度: {rb.linearVelocity} | 距离: {distanceToTarget:F2}");
+
 
             float targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
             rb.rotation = Mathf.LerpAngle(rb.rotation, targetAngle, Time.fixedDeltaTime * 3f);
@@ -146,6 +150,8 @@ public class EnemyController : BaseEntity
     // --- 追击逻辑 ---
     private void HandleChasing()
     {
+        float distanceToPlayer = Vector2.Distance(rb.position, targetPlayer.position);
+
         // 笔直冲向玩家
         Vector2 direction = ((Vector2)targetPlayer.position - rb.position).normalized;
         rb.linearVelocity = direction * chaseSpeed; // (已替换为 linearVelocity)
@@ -153,6 +159,41 @@ public class EnemyController : BaseEntity
         // 瞬间转身死死盯着玩家
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
         rb.rotation = angle;
+
+        // 如果还没到达攻击距离，继续追
+        if (distanceToPlayer > stopDistance)
+        {
+            rb.linearVelocity = direction * chaseSpeed;
+        }
+        else
+        {
+            // 距离足够近，停下脚步
+            rb.linearVelocity = Vector2.zero;
+
+            // 攻击冷却完毕，开始咬人
+            if (Time.time >= nextAttackTime)
+            {
+                MeleeAttack();
+                nextAttackTime = Time.time + attackRate;
+            }
+        }
+    }
+
+    private void MeleeAttack()
+    {
+        if (attackPoint == null) return;
+
+        Collider2D[] hitPlayers = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, playerLayer);
+
+        foreach (Collider2D player in hitPlayers)
+        {
+            BaseEntity entity = player.GetComponent<BaseEntity>();
+            if (entity != null)
+            {
+                entity.TakeDamage(attackDamage);
+                Debug.Log($"怪物咬中了玩家！造成 {attackDamage} 点伤害！");
+            }
+        }
     }
 
     // --- 随机选取巡逻点 ---
@@ -190,6 +231,13 @@ public class EnemyController : BaseEntity
         {
             Gizmos.color = new Color(1, 0, 0, 0.3f);
             Gizmos.DrawWireSphere(startPosition, roamRadius);
+        }
+
+        // --- 画出攻击范围 ---
+        if (attackPoint != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(attackPoint.position, attackRange);
         }
     }
 }
