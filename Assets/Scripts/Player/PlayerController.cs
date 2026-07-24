@@ -137,4 +137,25 @@ public class PlayerController : BaseEntity
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(attackPoint.position, attackRange);
     }
+
+    // --- 【新增】供剧情系统调用的深层属性修改接口 ---
+    public void ModifyCoreStats(float hpDelta, float maxHpDelta, float maxStaminaDelta)
+    {
+        // 1. 处理最大值变动 (确保不会降到 1 以下)
+        maxHealth = Mathf.Max(1f, maxHealth + maxHpDelta);
+        maxStamina = Mathf.Max(1f, maxStamina + maxStaminaDelta);
+
+        // 2. 处理当前血量变动 (恢复或受伤)
+        currentHealth = Mathf.Clamp(currentHealth + hpDelta, 0, maxHealth);
+
+        // 3. 约束当前体力不超过新上限
+        currentStamina = Mathf.Clamp(currentStamina, 0, maxStamina);
+
+        Debug.Log($"玩家属性已更新: 最大血量={maxHealth}, 最大体力={maxStamina}");
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
 }

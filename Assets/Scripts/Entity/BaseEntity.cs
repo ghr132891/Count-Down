@@ -6,7 +6,7 @@ public abstract class BaseEntity : MonoBehaviour
     [Header("Base Stats")]
     public float moveSpeed = 5f;
     public float maxHealth = 100f;
-    protected float currentHealth;
+    public float currentHealth;
 
     protected Rigidbody2D rb;
 
