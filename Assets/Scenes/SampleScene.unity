@@ -5593,6 +5593,7 @@ MonoBehaviour:
   isPlayerInShelter: 1
   survivalLootPrefabs:
   - {fileID: 8765712313254996009, guid: 1352b2e95e883844b8ffbadf9acf3c58, type: 3}
+  chestPrefab: {fileID: 7963908292354593566, guid: c351b8537ba938044ab45eb8e67eb912, type: 3}
   enemyPrefabs:
   - {fileID: 4210777697967459673, guid: 317f1e8f01ce2be4a988a2ebe68796f5, type: 3}
   spawnPoints:
@@ -5600,8 +5601,10 @@ MonoBehaviour:
   - {fileID: 1038497684}
   - {fileID: 1209661819}
   - {fileID: 502747388}
-  lootSpawnCount: 15
-  enemySpawnBaseCount: 5
+  baseChestCount: 6
+  chestIncreasePerDay: 0.5
+  baseEnemyCount: 5
+  enemyIncreasePerDay: 1
   summaryUI: {fileID: 22390701}
   stashInventory: {fileID: 628016967}
   player: {fileID: 1041825662}

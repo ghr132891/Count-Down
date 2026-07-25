@@ -107,8 +107,8 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         if (isDragging) return;
 
-        // 这里把颜色改成了更深的红、蓝、绿，防止在羊皮纸上看不清
-        string info = $"<b><color=#{ColorUtility.ToHtmlStringRGB(itemInstance.data.itemColor)}>{itemInstance.data.quality} {itemInstance.data.itemName}</color></b>\n" +
+        // 【核心修改】去掉了 {itemInstance.data.quality} 前缀，只保留 itemName
+        string info = $"<b><color=#{ColorUtility.ToHtmlStringRGB(itemInstance.data.itemColor)}>{itemInstance.data.itemName}</color></b>\n" +
                       $"Category: {itemInstance.data.category}\n" +
                       $"Size: {itemInstance.Width}x{itemInstance.Height}\n\n" +
                       $"<color=#8B0000>Food: {itemInstance.data.foodValue}</color>\n" +

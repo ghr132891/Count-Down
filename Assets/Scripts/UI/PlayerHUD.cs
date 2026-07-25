@@ -54,7 +54,7 @@ public class PlayerHUD : MonoBehaviour
                 {
                     // 白天已经开始，但玩家还在家里摸鱼没出门
                     timerText.text = "Waiting to leave (Timer not started)";
-                    timerText.color = Color.green;
+                    timerText.color = Color.black;
                 }
             }
             else

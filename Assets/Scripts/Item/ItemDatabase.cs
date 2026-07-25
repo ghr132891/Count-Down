@@ -83,13 +83,13 @@ public class ItemDatabase : MonoBehaviour
     private Vector2Int GetRandomSize()
     {
         float roll = Random.Range(0f, 100f);
-        if (roll < 30f) return new Vector2Int(1, 1);
-        if (roll < 48f) return new Vector2Int(1, 2);
-        if (roll < 62f) return new Vector2Int(1, 3);
-        if (roll < 74f) return new Vector2Int(2, 2);
-        if (roll < 84f) return new Vector2Int(2, 3);
-        if (roll < 92f) return new Vector2Int(2, 4);
-        if (roll < 97f) return new Vector2Int(3, 3);
+        if (roll < 24f) return new Vector2Int(1, 1);
+        if (roll < 40f) return new Vector2Int(1, 2);
+        if (roll < 52f) return new Vector2Int(1, 3);
+        if (roll < 64f) return new Vector2Int(2, 2);
+        if (roll < 76f) return new Vector2Int(2, 3);
+        if (roll < 86f) return new Vector2Int(2, 4);
+        if (roll < 94f) return new Vector2Int(3, 3);
         return new Vector2Int(3, 4);
     }
 

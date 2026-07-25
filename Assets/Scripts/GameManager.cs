@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Path: Assets/Scripts/GameManager.cs
+// 路径: Assets/Scripts/GameManager.cs
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
@@ -15,11 +15,27 @@ public class GameManager : MonoBehaviour
     public bool isPlayerInShelter = true;
 
     [Header("Spawn Controllers")]
-    public GameObject[] survivalLootPrefabs;
+    public GameObject[] survivalLootPrefabs; // 依然保留，宝箱开启时需要用到它
+    public GameObject chestPrefab;           // 【新增】地图上生成的宝箱预制体
     public GameObject[] enemyPrefabs;
     public Transform[] spawnPoints;
-    public int lootSpawnCount = 15;
-    public int enemySpawnBaseCount = 5;
+
+    [Header("Dynamic Spawn Rates")]
+    [Tooltip("第 1 天生成的宝箱总数")]
+    [Range(3, 20)]
+    public int baseChestCount = 6;
+
+    [Tooltip("每天增加的宝箱数量")]
+    [Range(0f, 2f)]
+    public float chestIncreasePerDay = 0.5f;
+
+    [Tooltip("第 1 天的基础敌人生成数量")]
+    [Range(1, 30)]
+    public int baseEnemyCount = 5;
+
+    [Tooltip("每天增加的敌人数量")]
+    [Range(0f, 5f)]
+    public float enemyIncreasePerDay = 0.5f;
 
     [Header("Core References")]
     public DailySummaryUI summaryUI;
@@ -68,7 +84,6 @@ public class GameManager : MonoBehaviour
 
         if (currentDay > 1 && SurvivalManager.Instance != null)
         {
-            // 接收三个维度的数值扣除结果
             SurvivalManager.Instance.ProcessDailyDeduction(currentDay, out float foodDed, out float waterDed, out float durDed);
             if (summaryUI != null) summaryUI.ShowMorningPanel(currentDay, foodDed, waterDed, durDed);
         }
@@ -117,24 +132,28 @@ public class GameManager : MonoBehaviour
 
     private void RefreshMap()
     {
+        // 销毁上一天遗留的掉落物、怪物，现在加上还要销毁上一天遗留的宝箱
         foreach (var loot in FindObjectsByType<InteractableLoot>(FindObjectsSortMode.None)) Destroy(loot.gameObject);
         foreach (var enemy in FindObjectsByType<EnemyController>(FindObjectsSortMode.None)) Destroy(enemy.gameObject);
+        foreach (var chest in FindObjectsByType<ChestController>(FindObjectsSortMode.None)) Destroy(chest.gameObject);
 
         if (spawnPoints == null || spawnPoints.Length == 0) return;
 
-        for (int i = 0; i < lootSpawnCount; i++)
+        // --- 核心修改：改为在地图上生成宝箱 ---
+        int todayChestCount = baseChestCount + Mathf.FloorToInt(currentDay * chestIncreasePerDay);
+        for (int i = 0; i < todayChestCount; i++)
         {
             Transform sp = spawnPoints[Random.Range(0, spawnPoints.Length)];
-            if (survivalLootPrefabs.Length > 0 && survivalLootPrefabs[0] != null)
+            if (chestPrefab != null)
             {
-                GameObject prefab = survivalLootPrefabs[0];
                 Vector2 offset = Random.insideUnitCircle * 2f;
-                Instantiate(prefab, (Vector2)sp.position + offset, Quaternion.identity);
+                Instantiate(chestPrefab, (Vector2)sp.position + offset, Quaternion.identity);
             }
         }
 
-        int enemyCount = enemySpawnBaseCount + (currentDay / 2);
-        for (int i = 0; i < enemyCount; i++)
+        // 生成敌人逻辑不变
+        int todayEnemyCount = baseEnemyCount + Mathf.FloorToInt(currentDay * enemyIncreasePerDay);
+        for (int i = 0; i < todayEnemyCount; i++)
         {
             Transform sp = spawnPoints[Random.Range(0, spawnPoints.Length)];
             if (enemyPrefabs.Length > 0)

@@ -105,7 +105,8 @@ public class InteractableLoot : MonoBehaviour
             style.normal.textColor = currentInstance.data.itemColor;
             style.fontStyle = FontStyle.Bold;
 
-            string prompt = $"[F] Pick up {currentInstance.data.quality} {currentInstance.data.itemName} ({currentInstance.Width}x{currentInstance.Height})\n[R] Rotate Item";
+            // 【核心修改】去掉了 {currentInstance.data.quality} 前缀
+            string prompt = $"[F] Pick up {currentInstance.data.itemName} ({currentInstance.Width}x{currentInstance.Height})\n[R] Rotate Item";
 
             GUI.Label(new Rect(screenPos.x - 40, Screen.height - screenPos.y - 60, 250, 50), prompt, style);
         }
