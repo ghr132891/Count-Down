@@ -134,7 +134,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      TinySquareRedButton_0: -3641092798304355568
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -284,7 +284,14 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Pawn_Interact Knife_0: -7630237011073246913
+      Pawn_Interact Knife_1: 1537740210692759063
+      Pawn_Interact Knife_2: 8846431254335609180
+      Pawn_Interact Knife_3: -2719170756685289180
+      Pawn_Interact Knife_4: -4819376441665360405
+      Pawn_Interact Knife_5: -9165007210808111390
+      Pawn_Interact Knife_6: 6529477856461104490
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

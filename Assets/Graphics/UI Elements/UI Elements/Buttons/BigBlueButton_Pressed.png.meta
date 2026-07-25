@@ -334,7 +334,16 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      BigBlueButton_Pressed_0: -6293989680013953101
+      BigBlueButton_Pressed_1: -6473395832565432866
+      BigBlueButton_Pressed_2: 1864158604092832682
+      BigBlueButton_Pressed_3: -7609367355163690567
+      BigBlueButton_Pressed_4: 5216335685762181551
+      BigBlueButton_Pressed_5: 6012965833944884578
+      BigBlueButton_Pressed_6: -8850561203499809697
+      BigBlueButton_Pressed_7: 3174804385422323254
+      BigBlueButton_Pressed_8: -5322972215343225441
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

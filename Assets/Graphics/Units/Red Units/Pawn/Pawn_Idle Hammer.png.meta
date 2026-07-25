@@ -309,7 +309,15 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Pawn_Idle Hammer_0: -1438690674706414118
+      Pawn_Idle Hammer_1: -6769589693572739235
+      Pawn_Idle Hammer_2: 7671773035475251030
+      Pawn_Idle Hammer_3: -3585113143308330294
+      Pawn_Idle Hammer_4: -8036923346196360993
+      Pawn_Idle Hammer_5: -2835223209331938337
+      Pawn_Idle Hammer_6: 6479204062385371767
+      Pawn_Idle Hammer_7: -8804233758041304971
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

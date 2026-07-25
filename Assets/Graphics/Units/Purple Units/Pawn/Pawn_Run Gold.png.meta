@@ -259,7 +259,13 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Pawn_Run Gold_0: 2932321786322880735
+      Pawn_Run Gold_1: 7068027714915083470
+      Pawn_Run Gold_2: 8904474459742203427
+      Pawn_Run Gold_3: 1725903354682961715
+      Pawn_Run Gold_4: -1169541222142315381
+      Pawn_Run Gold_5: 3329887467678335695
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

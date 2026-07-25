@@ -309,7 +309,15 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Pawn_Idle Wood_0: -5085043012632821289
+      Pawn_Idle Wood_1: -5994379859638548071
+      Pawn_Idle Wood_2: -823819071035115226
+      Pawn_Idle Wood_3: -833154056232300151
+      Pawn_Idle Wood_4: 108493789643531465
+      Pawn_Idle Wood_5: -5847663375154164504
+      Pawn_Idle Wood_6: 6887791974147412032
+      Pawn_Idle Wood_7: 5880147983386880918
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

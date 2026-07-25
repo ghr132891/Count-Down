@@ -459,7 +459,21 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Ribbon_Blue_0: -6403135837044706709
+      Ribbon_Blue_1: 8602475773602502231
+      Ribbon_Blue_10: 9081981098608516711
+      Ribbon_Blue_11: 14344029419325332
+      Ribbon_Blue_12: 178840154880467372
+      Ribbon_Blue_13: -3635293084077061402
+      Ribbon_Blue_2: -7159024142265987230
+      Ribbon_Blue_3: 6101449915343099395
+      Ribbon_Blue_4: -6525322088253531277
+      Ribbon_Blue_5: -1761777876576234909
+      Ribbon_Blue_6: -5635756333789992741
+      Ribbon_Blue_7: 8373514139865434107
+      Ribbon_Blue_8: -4520668965364241505
+      Ribbon_Blue_9: -354334942525748987
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -309,7 +309,15 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Pawn_Idle Pickaxe_0: 222377792815555279
+      Pawn_Idle Pickaxe_1: 4063784870428184418
+      Pawn_Idle Pickaxe_2: 7764703495603305711
+      Pawn_Idle Pickaxe_3: -4767586467243673879
+      Pawn_Idle Pickaxe_4: 4554453384812065433
+      Pawn_Idle Pickaxe_5: 2959871830974456573
+      Pawn_Idle Pickaxe_6: 9052662415938520062
+      Pawn_Idle Pickaxe_7: -3749376832578831336
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

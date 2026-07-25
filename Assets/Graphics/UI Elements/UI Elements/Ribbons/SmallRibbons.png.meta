@@ -859,7 +859,37 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      SmallRibbons_0: 3813146175437885572
+      SmallRibbons_1: -3553479089661526232
+      SmallRibbons_10: 7500714515581761838
+      SmallRibbons_11: -8755007240219380164
+      SmallRibbons_12: -5555354819646818797
+      SmallRibbons_13: 6685241997285740609
+      SmallRibbons_14: -4487740598825144094
+      SmallRibbons_15: -2807023381062750501
+      SmallRibbons_16: -574829362769322939
+      SmallRibbons_17: 3990700186555156725
+      SmallRibbons_18: 1837833527015443296
+      SmallRibbons_19: 350529178406941109
+      SmallRibbons_2: -6454198089579692007
+      SmallRibbons_20: 6975263885641160321
+      SmallRibbons_21: 3642138570263608784
+      SmallRibbons_22: 5264456932580103544
+      SmallRibbons_23: -4046453938997222490
+      SmallRibbons_24: -4828164742663446440
+      SmallRibbons_25: -3309400837357007275
+      SmallRibbons_26: -4141307803472043096
+      SmallRibbons_27: -2995242306117270616
+      SmallRibbons_28: 183649844991321642
+      SmallRibbons_29: 2259460581064944353
+      SmallRibbons_3: 1984932507552728771
+      SmallRibbons_4: 218843805851527920
+      SmallRibbons_5: -2678153576258496853
+      SmallRibbons_6: -6641429292784531893
+      SmallRibbons_7: 7924007336299825692
+      SmallRibbons_8: 2311322994861371486
+      SmallRibbons_9: -7909405337677870665
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

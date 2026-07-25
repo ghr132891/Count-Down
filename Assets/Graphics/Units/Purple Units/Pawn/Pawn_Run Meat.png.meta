@@ -259,7 +259,13 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Pawn_Run Meat_0: 5799779341347459245
+      Pawn_Run Meat_1: 1253374708327996498
+      Pawn_Run Meat_2: 1984608769305701924
+      Pawn_Run Meat_3: -3474626165232038075
+      Pawn_Run Meat_4: 4511737243138824817
+      Pawn_Run Meat_5: 5941728732924915974
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

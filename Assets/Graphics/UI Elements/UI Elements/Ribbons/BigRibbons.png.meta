@@ -484,7 +484,22 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      BigRibbons_0: -4892212827595964496
+      BigRibbons_1: 351974544103463365
+      BigRibbons_10: 1307979642986502174
+      BigRibbons_11: 47181924574511622
+      BigRibbons_12: 3337324001713968332
+      BigRibbons_13: -1867464764768205168
+      BigRibbons_14: -3536333163330737479
+      BigRibbons_2: -7536648891223242269
+      BigRibbons_3: 1064086505449676317
+      BigRibbons_4: -5222043051815097015
+      BigRibbons_5: 7388606491961418501
+      BigRibbons_6: -5681883222114246646
+      BigRibbons_7: 4548267888105415737
+      BigRibbons_8: -4724587223178234472
+      BigRibbons_9: -2386969938797609930
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

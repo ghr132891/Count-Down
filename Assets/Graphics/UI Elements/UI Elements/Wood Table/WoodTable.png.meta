@@ -334,7 +334,16 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      WoodTable_0: 1456634771012968291
+      WoodTable_1: -2984624457334693161
+      WoodTable_2: 7553826016581799804
+      WoodTable_3: -565612253562943241
+      WoodTable_4: 3108243940215872247
+      WoodTable_5: 3492093076585841537
+      WoodTable_6: -2246418273884473086
+      WoodTable_7: -5544660823759752318
+      WoodTable_8: 3887476063807763688
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

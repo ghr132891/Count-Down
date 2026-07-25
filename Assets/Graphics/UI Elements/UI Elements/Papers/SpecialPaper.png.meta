@@ -334,7 +334,16 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      SpecialPaper_0: -3662080559894829788
+      SpecialPaper_1: -3528550575293366639
+      SpecialPaper_2: -559158166968446499
+      SpecialPaper_3: -3425989083507711834
+      SpecialPaper_4: -7541358502943136439
+      SpecialPaper_5: -2500842349237177605
+      SpecialPaper_6: 4353327290290636131
+      SpecialPaper_7: -7738430037826034828
+      SpecialPaper_8: -4761550643975672150
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

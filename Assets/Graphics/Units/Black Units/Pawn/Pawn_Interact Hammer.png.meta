@@ -184,7 +184,10 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Pawn_Interact Hammer_0: -1241957522165214808
+      Pawn_Interact Hammer_1: -4152304209030961917
+      Pawn_Interact Hammer_2: -7438993905676777009
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

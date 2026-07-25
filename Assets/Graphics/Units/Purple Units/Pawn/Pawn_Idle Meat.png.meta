@@ -309,7 +309,15 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Pawn_Idle Meat_0: -6204943402206193772
+      Pawn_Idle Meat_1: -3129909716869165955
+      Pawn_Idle Meat_2: -7235056554443838409
+      Pawn_Idle Meat_3: -4440482267132465948
+      Pawn_Idle Meat_4: -1033137359544254729
+      Pawn_Idle Meat_5: 4081414510747251323
+      Pawn_Idle Meat_6: 735826692581283802
+      Pawn_Idle Meat_7: -4296820450808306973
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
