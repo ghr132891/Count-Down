@@ -22,12 +22,14 @@ public abstract class BaseEntity : MonoBehaviour
     public virtual void TakeDamage(float damage)
     {
         currentHealth -= damage;
+        // 【临时排查】打印是谁受到了多少伤害
+        Debug.Log($"{gameObject.name} 受到了 {damage} 点伤害！当前血量: {currentHealth}");
+
         if (currentHealth <= 0)
         {
             Die();
         }
     }
-
     protected virtual void Die()
     {
         Destroy(gameObject);

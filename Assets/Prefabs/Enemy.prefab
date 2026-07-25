@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 8041384811472831}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.02, y: 0.47, z: 0}
+  m_LocalPosition: {x: 0.24, y: 0.01, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -109,7 +109,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  - {fileID: 2100000, guid: f9b52694535a65f42a933a3b367fcfd0, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -130,7 +130,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -4318319075512011398, guid: ece15c6add5425d44bad0a1547842590, type: 3}
+  m_Sprite: {fileID: 7384290322352760091, guid: 6412e5833a36d404197baf7ea7d7689f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -193,14 +193,14 @@ Rigidbody2D:
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_GravityScale: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 9870635102b8d424ead086b28df86cf7, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
@@ -217,22 +217,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 5
-  maxHealth: 100
+  maxHealth: 10
   currentHealth: 0
   currentState: 0
   animator: {fileID: 9094102437535105612}
-  viewRadius: 8
-  viewAngle: 135
+  viewRadius: 6
+  viewAngle: 60
   roamRadius: 4
   roamSpeed: 2
   roamWaitTime: 2
-  chaseSpeed: 5
-  loseTargetDistance: 12
+  chaseSpeed: 4
+  loseTargetDistance: 6
   attackPoint: {fileID: 8378571452051551852}
-  attackRange: 1
+  attackRange: 0.4
   stopDistance: 1
-  attackDamage: 20
-  attackRate: 1
+  attackDamage: 10
+  attackRate: 2
   playerLayer:
     serializedVersion: 2
     m_Bits: 64

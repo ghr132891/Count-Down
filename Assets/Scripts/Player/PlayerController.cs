@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// 路径: Assets/Scripts/Player/PlayerController.cs
+// 路径: Assets/Scripts/Player/PlayerController.cs[cite: 1]
 public class PlayerController : BaseEntity
 {
     private Vector2 movementInput;
@@ -9,13 +9,6 @@ public class PlayerController : BaseEntity
 
     [Header("Animation Settings")]
     public Animator animator;
-
-    [Header("Melee Combat Settings")]
-    public Transform attackPoint;
-    public float attackRange = 1f;
-    public float attackDamage = 25f;
-    public float attackRate = 0.5f;
-    public LayerMask enemyLayers;
 
     [Header("Stamina & Sprint Settings")]
     public float maxStamina = 100f;
@@ -29,31 +22,26 @@ public class PlayerController : BaseEntity
 
     private bool isSprinting = false;
     private bool isExhausted = false;
-    private float nextAttackTime = 0f;
 
     protected override void Awake()
     {
         base.Awake();
         mainCamera = Camera.main;
         if (animator == null) animator = GetComponentInChildren<Animator>();
-
-        // 【新增】游戏刚启动时，直接拉满所有状态
         RestoreFullStats();
     }
 
     private void Update()
     {
-        movementInput.x = Input.GetAxisRaw("Horizontal");
-        movementInput.y = Input.GetAxisRaw("Vertical");
+        // 加入死区过滤，彻底解决静止时的微小漂移
+        float rawH = Input.GetAxisRaw("Horizontal");
+        float rawV = Input.GetAxisRaw("Vertical");
+
+        movementInput.x = Mathf.Abs(rawH) > 0.1f ? rawH : 0f;
+        movementInput.y = Mathf.Abs(rawV) > 0.1f ? rawV : 0f;
 
         HandleStamina();
         HandleFacing();
-
-        if (Input.GetMouseButtonDown(0) && Time.time >= nextAttackTime)
-        {
-            MeleeAttack();
-            nextAttackTime = Time.time + attackRate;
-        }
         UpdateAnimations();
     }
 
@@ -73,7 +61,6 @@ public class PlayerController : BaseEntity
     private void HandleStamina()
     {
         bool wantToSprint = Input.GetKey(KeyCode.LeftShift) && movementInput.magnitude > 0;
-
         if (wantToSprint && !isExhausted)
         {
             isSprinting = true;
@@ -120,24 +107,6 @@ public class PlayerController : BaseEntity
         }
     }
 
-    private void MeleeAttack()
-    {
-        if (attackPoint == null) return;
-        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
-        foreach (Collider2D enemy in hitEnemies)
-        {
-            BaseEntity entity = enemy.GetComponent<BaseEntity>();
-            if (entity != null) entity.TakeDamage(attackDamage);
-        }
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        if (attackPoint == null) return;
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(attackPoint.position, attackRange);
-    }
-
     public void ModifyCoreStats(float hpDelta, float maxHpDelta, float maxStaminaDelta)
     {
         maxHealth = Mathf.Max(1f, maxHealth + maxHpDelta);
@@ -145,7 +114,6 @@ public class PlayerController : BaseEntity
         currentHealth = Mathf.Clamp(currentHealth + hpDelta, 0, maxHealth);
         currentStamina = Mathf.Clamp(currentStamina, 0, maxStamina);
         Debug.Log($"MaxHp={maxHealth}, MaxStamina={maxStamina}");
-
         if (currentHealth <= 0)
         {
             Die();
@@ -157,11 +125,10 @@ public class PlayerController : BaseEntity
         if (GameManager.Instance != null) GameManager.Instance.PlayerDied();
     }
 
-    // --- 【核心修改】新增一键满血满蓝方法 ---
     public void RestoreFullStats()
     {
         currentHealth = maxHealth;
         currentStamina = maxStamina;
-        isExhausted = false; // 解除强制不能奔跑的力竭状态
+        isExhausted = false;
     }
 }

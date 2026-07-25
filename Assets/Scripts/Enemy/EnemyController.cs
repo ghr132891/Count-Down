@@ -20,13 +20,17 @@ public class EnemyController : BaseEntity
     [Range(0, 360)]
     public float viewAngle = 180f;
 
-    [Header("Roam Settings")]
-    public float roamRadius = 4f;
+    [Header("Roam Settings (巡逻设置)")]
+    public float roamRadius = 4f;       // 巡逻圆形的半径
     public float roamSpeed = 2f;
     public float roamWaitTime = 2f;
-    private Vector2 startPosition;
+    private Vector2 startPosition;      // 初始出生点（圆心）
     private Vector2 roamTarget;
     private float roamTimer;
+
+    // 防卡死相关变量
+    private float stuckTimer = 0f;
+    private Vector2 lastPosition;
 
     [Header("Chase & Combat Settings")]
     public float chaseSpeed = 5f;
@@ -37,19 +41,18 @@ public class EnemyController : BaseEntity
     public float attackDamage = 15f;
     public float attackRate = 1f;
     public LayerMask playerLayer;
+
     private float nextAttackTime = 0f;
     private Transform targetPlayer;
 
     protected override void Awake()
     {
         base.Awake();
-
-        // 彻底锁死物理系统的 Z 轴旋转，加上双保险
         if (rb != null) rb.freezeRotation = true;
-
         startPosition = rb.position;
-
+        lastPosition = rb.position;
         if (animator == null) animator = GetComponentInChildren<Animator>();
+
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null)
         {
@@ -67,6 +70,7 @@ public class EnemyController : BaseEntity
     {
         if (targetPlayer == null) return;
         CheckVision();
+
         switch (currentState)
         {
             case EnemyState.Roaming:
@@ -78,7 +82,6 @@ public class EnemyController : BaseEntity
         }
     }
 
-    // --- 核心修改 1：移除依赖旋转的 360 度扫描，改为纯左右视觉判定 ---
     private void CheckVision()
     {
         float distanceToPlayer = Vector2.Distance(rb.position, targetPlayer.position);
@@ -87,10 +90,7 @@ public class EnemyController : BaseEntity
             if (distanceToPlayer <= viewRadius)
             {
                 Vector2 directionToPlayer = ((Vector2)targetPlayer.position - rb.position).normalized;
-
-                // 获取当前角色的真实朝向（根据缩放正负值判断，而不是 Rotation）
                 Vector2 currentFacing = transform.localScale.x > 0 ? Vector2.right : Vector2.left;
-
                 float angleToPlayer = Vector2.Angle(currentFacing, directionToPlayer);
                 if (angleToPlayer <= viewAngle / 2f)
                 {
@@ -103,7 +103,7 @@ public class EnemyController : BaseEntity
             if (distanceToPlayer > loseTargetDistance)
             {
                 currentState = EnemyState.Roaming;
-                startPosition = rb.position;
+                startPosition = rb.position; // 丢失目标后，以当前位置为新的巡逻圆心
                 PickNewRoamTarget();
             }
         }
@@ -115,6 +115,7 @@ public class EnemyController : BaseEntity
         if (distanceToTarget < 0.2f)
         {
             rb.linearVelocity = Vector2.zero;
+            stuckTimer = 0f;
             roamTimer -= Time.fixedDeltaTime;
             if (roamTimer <= 0)
             {
@@ -126,6 +127,22 @@ public class EnemyController : BaseEntity
             Vector2 direction = (roamTarget - rb.position).normalized;
             rb.linearVelocity = direction * roamSpeed;
             HandleFacing(direction);
+
+            // 巡逻防卡死检测
+            if (Vector2.Distance(rb.position, lastPosition) < 0.01f)
+            {
+                stuckTimer += Time.fixedDeltaTime;
+                if (stuckTimer > 1.5f)
+                {
+                    PickNewRoamTarget();
+                    stuckTimer = 0f;
+                }
+            }
+            else
+            {
+                stuckTimer = 0f;
+            }
+            lastPosition = rb.position;
         }
     }
 
@@ -134,6 +151,7 @@ public class EnemyController : BaseEntity
         float distanceToPlayer = Vector2.Distance(rb.position, targetPlayer.position);
         Vector2 direction = ((Vector2)targetPlayer.position - rb.position).normalized;
         HandleFacing(direction);
+
         if (distanceToPlayer > stopDistance)
         {
             rb.linearVelocity = direction * chaseSpeed;
@@ -149,17 +167,31 @@ public class EnemyController : BaseEntity
         }
     }
 
-    // --- 核心修改 2：彻底废除 Quaternion.Euler 旋转，只允许 Scale(缩放) 左右翻转 ---
+    // 防止怪物之间互相推搡
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        if (collision.gameObject.GetComponent<EnemyController>() != null)
+        {
+            foreach (ContactPoint2D contact in collision.contacts)
+            {
+                Vector2 currentVel = rb.linearVelocity;
+                float dot = Vector2.Dot(currentVel, contact.normal);
+                if (dot < 0)
+                {
+                    rb.linearVelocity -= contact.normal * dot;
+                }
+            }
+        }
+    }
+
     private void HandleFacing(Vector2 direction)
     {
-        // 面向右边
         if (direction.x > 0.01f)
         {
             Vector3 scale = transform.localScale;
             scale.x = Mathf.Abs(scale.x);
             transform.localScale = scale;
         }
-        // 面向左边
         else if (direction.x < -0.01f)
         {
             Vector3 scale = transform.localScale;
@@ -188,8 +220,8 @@ public class EnemyController : BaseEntity
                 Debug.LogError($"[Animation Error] Cannot find 'Attack' trigger on '{animator.gameObject.name}'! Please check Animator setup.");
             }
         }
-
         if (attackPoint == null) return;
+
         Collider2D[] hitPlayers = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, playerLayer);
         foreach (Collider2D player in hitPlayers)
         {
@@ -201,37 +233,32 @@ public class EnemyController : BaseEntity
         }
     }
 
-    // --- 核心修改 3：限制巡逻逻辑只在水平 X 轴随机，告别 360 度圆圈乱走 ---
     private void PickNewRoamTarget()
     {
-        float randomX = Random.Range(-roamRadius, roamRadius);
-        // 强制 Y 轴偏移为 0
-        Vector2 randomOffset = new Vector2(randomX, 0f);
+        // 【核心修改】使用 Random.insideUnitCircle 在以 startPosition 为中心的圆圈内随机挑一个点（支持上下左右）
+        Vector2 randomOffset = Random.insideUnitCircle * roamRadius;
         roamTarget = startPosition + randomOffset;
         roamTimer = roamWaitTime;
+        lastPosition = rb.position;
     }
 
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.yellow;
-
-        // Gizmo 画线也同步改为基于缩放的直线逻辑
         Vector2 currentFacing = transform.localScale.x > 0 ? Vector2.right : Vector2.left;
         Vector3 forward = (Vector3)currentFacing * viewRadius;
-
         Quaternion leftRayRotation = Quaternion.Euler(0, 0, viewAngle / 2f);
         Quaternion rightRayRotation = Quaternion.Euler(0, 0, -viewAngle / 2f);
         Vector3 leftRay = leftRayRotation * forward;
         Vector3 rightRay = rightRayRotation * forward;
-
         Gizmos.DrawRay(transform.position, leftRay);
         Gizmos.DrawRay(transform.position, rightRay);
 
         if (Application.isPlaying)
         {
             Gizmos.color = new Color(1, 0, 0, 0.3f);
-            // 将圆圈提示改为水平巡逻线提示
-            Gizmos.DrawLine(startPosition + Vector2.left * roamRadius, startPosition + Vector2.right * roamRadius);
+            // 【核心修改】在 Scene 视图中以出生点为圆心，画出巡逻的圆形范围
+            Gizmos.DrawWireSphere(startPosition, roamRadius);
         }
 
         if (attackPoint != null)
