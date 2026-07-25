@@ -41,5 +41,20 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: layer 1 bg coloor
+    uniqueID: 3781942477
+    locked: 0
+  - name: layer 2 water foam
+    uniqueID: 2957141305
+    locked: 0
+  - name: layer 3 shadow
+    uniqueID: 3791663489
+    locked: 0
+  - name: layer 4 elevated ground
+    uniqueID: 2596077891
+    locked: 0
+  - name: Layer 5
+    uniqueID: 303173879
+    locked: 0
   m_RenderingLayers:
   - Default
