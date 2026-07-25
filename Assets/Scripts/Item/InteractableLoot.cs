@@ -4,21 +4,53 @@ using UnityEngine;
 [RequireComponent(typeof(Collider2D))]
 public class InteractableLoot : MonoBehaviour
 {
-    [Header("Loot Data")]
-    public ItemData itemToGive;
+    [Header("显示设置")]
+    public float groundScale = 1.2f;
 
-    // 当前地上的这个物品实例
+    private ItemData itemToGive;
     private ItemInstance currentInstance;
-
     private bool canInteract = false;
     private PlayerInventory playerInventory;
 
+    // 【新增】标记是否已经被外部（比如丢弃功能）初始化过了
+    private bool isInitialized = false;
+
+    // 【新增】供外部调用：将背包里的物品丢到地上
+    public void SetupDroppedItem(ItemInstance droppedInstance)
+    {
+        itemToGive = droppedInstance.data;
+        currentInstance = droppedInstance; // 继承旋转状态等实例数据
+        isInitialized = true;
+        ApplyVisuals();
+    }
+
     private void Start()
     {
-        // 游戏开始时，基于模板生成一个独立的实例
-        if (itemToGive != null)
+        // 如果没有被丢弃功能初始化，就走默认的随机生成逻辑
+        if (!isInitialized && ItemDatabase.Instance != null)
         {
+            itemToGive = ItemDatabase.Instance.GetRandomLoot();
             currentInstance = new ItemInstance(itemToGive);
+            isInitialized = true;
+            ApplyVisuals();
+        }
+    }
+
+    // 提取公共视觉刷新方法
+    private void ApplyVisuals()
+    {
+        transform.localScale = new Vector3(groundScale, groundScale, 1f);
+
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        if (sr != null && itemToGive != null && itemToGive.iconSprite != null)
+        {
+            sr.sprite = itemToGive.iconSprite;
+        }
+
+        // 【细节优化】如果丢弃前物品是旋转状态，地上的模型也转 90 度
+        if (currentInstance != null && currentInstance.isRotated)
+        {
+            transform.localEulerAngles = new Vector3(0, 0, 90f);
         }
     }
 
@@ -26,24 +58,20 @@ public class InteractableLoot : MonoBehaviour
     {
         if (canInteract && currentInstance != null)
         {
-            // --- 新增：按 R 键旋转物品 ---
             if (Input.GetKeyDown(KeyCode.R))
             {
                 currentInstance.isRotated = !currentInstance.isRotated;
-                Debug.Log($"【提示】物品已旋转，当前需要空间: {currentInstance.Width}x{currentInstance.Height}");
+                // 同步旋转地上的贴图
+                transform.localEulerAngles = currentInstance.isRotated ? new Vector3(0, 0, 90f) : Vector3.zero;
+                Debug.Log($"Item rotated: {currentInstance.Width}x{currentInstance.Height}");
             }
 
-            // 按 F 键拾取
             if (Input.GetKeyDown(KeyCode.F))
             {
                 if (playerInventory != null)
                 {
-                    // 传入带有当前旋转状态的实例
                     bool success = playerInventory.AutoAddItem(currentInstance);
-                    if (success)
-                    {
-                        Destroy(gameObject);
-                    }
+                    if (success) Destroy(gameObject);
                 }
             }
         }
@@ -72,15 +100,14 @@ public class InteractableLoot : MonoBehaviour
         if (canInteract && currentInstance != null)
         {
             Vector3 screenPos = Camera.main.WorldToScreenPoint(transform.position);
-
             GUIStyle style = new GUIStyle();
             style.fontSize = 16;
-            style.normal.textColor = Color.green;
+            style.normal.textColor = currentInstance.data.itemColor;
             style.fontStyle = FontStyle.Bold;
 
-            // 实时显示当前的长宽状态，让你知道塞进包里会是横的还是竖的
-            string prompt = $"[F] 拾取 ({currentInstance.Width}x{currentInstance.Height})\n[R] 旋转";
-            GUI.Label(new Rect(screenPos.x - 40, Screen.height - screenPos.y - 60, 150, 50), prompt, style);
+            string prompt = $"[F] Pick up {currentInstance.data.quality} {currentInstance.data.itemName} ({currentInstance.Width}x{currentInstance.Height})\n[R] Rotate Item";
+
+            GUI.Label(new Rect(screenPos.x - 40, Screen.height - screenPos.y - 60, 250, 50), prompt, style);
         }
     }
 }

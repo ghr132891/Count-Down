@@ -169,4 +169,17 @@ public class PlayerInventory : MonoBehaviour
 
         if (uiManager != null) uiManager.ExpandUI(oldRows, newRows);
     }
+
+    public void ClearInventory()
+    {
+        for (int y = 0; y < rows; y++)
+        {
+            for (int x = 0; x < columns; x++)
+            {
+                grid[x, y] = null;
+            }
+        }
+        placedItems.Clear();
+        if (uiManager != null) uiManager.RefreshUI();
+    }
 }

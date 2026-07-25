@@ -1,15 +1,21 @@
 using UnityEngine;
 
-// 专门管理 60s 类型的生存状态数值
+// Path: Assets/Scripts/SurvivalManager.cs
 public class SurvivalManager : MonoBehaviour
 {
     public static SurvivalManager Instance { get; private set; }
 
-    [Header("Survival Stats")]
-    public int food = 10;
-    public int water = 10;
-    public int shelterDurability = 50;
-    public int injuryCount = 0; // 永久累积，不可重置
+    [Header("Global Core Stats")]
+    // 变更为三个核心数值
+    public float totalFoodValue = 100f;
+    public float totalWaterValue = 100f;
+    public float totalDurabilityValue = 100f;
+
+    [Header("Daily Deduction Settings")]
+    public float baseFoodDeduction = 5f;
+    public float baseWaterDeduction = 5f;
+    public float baseDurabilityDeduction = 5f;
+    public float dayMultiplier = 2f;
 
     private void Awake()
     {
@@ -17,29 +23,45 @@ public class SurvivalManager : MonoBehaviour
         else Destroy(gameObject);
     }
 
-    // 每天结算时调用（可被剧情选项或 GameManager 触发）
-    public void ProcessDailyConsumption()
+    public void AddValues(float foodVal, float waterVal, float durVal)
     {
-        food -= 3;
-        water -= 2;
-        shelterDurability -= Random.Range(5, 11); // 每天僵尸攻击扣减 5~10
-
-        CheckDeathConditions();
+        totalFoodValue += foodVal;
+        totalWaterValue += waterVal;
+        totalDurabilityValue += durVal;
     }
 
-    private void CheckDeathConditions()
+    public void ProcessDailyDeduction(int day, out float foodDed, out float waterDed, out float durDed)
     {
-        if (food <= 0) Debug.Log("【游戏结束】饥饿死亡 (B1)");
-        if (water <= 0) Debug.Log("【游戏结束】脱水死亡 (B1)");
-        if (shelterDurability <= 0) Debug.Log("【游戏结束】僵尸破门 (B3)");
-        if (injuryCount >= 5) Debug.Log("【游戏结束】累计受伤感染 (B4)");
+        foodDed = 0f;
+        waterDed = 0f;
+        durDed = 0f;
+        if (day == 1) return;
+
+        foodDed = baseFoodDeduction + (day * dayMultiplier);
+        waterDed = baseWaterDeduction + (day * dayMultiplier);
+        durDed = baseDurabilityDeduction + (day * dayMultiplier);
+
+        totalFoodValue -= foodDed;
+        totalWaterValue -= waterDed;
+        totalDurabilityValue -= durDed;
+
+        Debug.Log($"Day {day} deduction: Food -{foodDed}, Water -{waterDed}, Durability -{durDed}");
+        CheckGameOver();
     }
 
-    // 供剧情选项调用的修改数值接口
-    public void ModifyStats(int foodChange, int waterChange, int durabilityChange)
+    public void PenalizeDeath()
     {
-        food = Mathf.Max(0, food + foodChange);
-        water = Mathf.Max(0, water + waterChange);
-        shelterDurability = Mathf.Clamp(shelterDurability + durabilityChange, 0, 100);
+        totalFoodValue /= 2f;
+        totalWaterValue /= 2f;
+        totalDurabilityValue /= 2f;
+        Debug.Log("<color=red>Player died/timed out! Stash value halved!</color>");
+        CheckGameOver();
+    }
+
+    private void CheckGameOver()
+    {
+        if (totalFoodValue <= 0) Debug.Log("[Game Over] Food value depleted!");
+        if (totalWaterValue <= 0) Debug.Log("[Game Over] Water value depleted!");
+        if (totalDurabilityValue <= 0) Debug.Log("[Game Over] Shelter durability reached zero, shelter breached!");
     }
 }

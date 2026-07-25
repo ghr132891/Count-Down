@@ -218,8 +218,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 5
   maxHealth: 100
+  currentHealth: 0
   currentState: 0
-  animator: {fileID: 0}
+  animator: {fileID: 9094102437535105612}
   viewRadius: 8
   viewAngle: 135
   roamRadius: 4

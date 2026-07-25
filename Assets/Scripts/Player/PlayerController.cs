@@ -158,4 +158,12 @@ public class PlayerController : BaseEntity
             Die();
         }
     }
+
+    protected override void Die()
+    {
+        base.Die();
+        if (GameManager.Instance != null) GameManager.Instance.PlayerDied();
+    }
+
+
 }

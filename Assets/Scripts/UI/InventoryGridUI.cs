@@ -62,11 +62,18 @@ public class InventoryGridUI : MonoBehaviour
     public void SetupInnerContainer(RectTransform rect, Vector2 size)
     {
         if (rect == null) return;
-        rect.anchorMin = new Vector2(0, 1);
-        rect.anchorMax = new Vector2(0, 1);
+
+        // 1. 将锚点(Anchor)设为父物体背景板的正中心
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+
+        // 2. 保持轴心(Pivot)在左上角，这样格子的生成坐标 (x, -y) 就不会乱
         rect.pivot = new Vector2(0, 1);
+
         rect.sizeDelta = size;
-        rect.anchoredPosition = Vector2.zero;
+
+        // 3. 【核心修改】因为轴心在左上角，所以往左移一半宽度，往上移一半高度，即可实现整体完美居中
+        rect.anchoredPosition = new Vector2(-size.x / 2f, size.y / 2f);
     }
 
     private void GenerateBackgroundGrid(int startRow, int endRow)

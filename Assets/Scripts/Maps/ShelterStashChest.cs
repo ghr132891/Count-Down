@@ -5,10 +5,9 @@ using System.Collections.Generic;
 [RequireComponent(typeof(Collider2D))]
 public class ShelterStashChest : MonoBehaviour
 {
-    [Header("UI References")]
+    [Header("UI 引用")]
     public InventoryGridUI playerBackpackUI;
     public InventoryGridUI stashUI;
-
     private bool isPlayerNearby = false;
 
     private void Update()
@@ -23,6 +22,7 @@ public class ShelterStashChest : MonoBehaviour
             }
         }
 
+        // 一键存入所有物品
         if (isPlayerNearby && stashUI != null && stashUI.IsOpen() && Input.GetKeyDown(KeyCode.G))
         {
             DepositAllToStash();
@@ -33,8 +33,8 @@ public class ShelterStashChest : MonoBehaviour
     {
         PlayerInventory pInv = playerBackpackUI.inventory;
         PlayerInventory sInv = stashUI.inventory;
-
         List<ItemInstance> itemsToMove = new List<ItemInstance>();
+
         foreach (var pItem in pInv.placedItems) itemsToMove.Add(pItem.instance);
 
         bool movedAny = false;
@@ -51,7 +51,7 @@ public class ShelterStashChest : MonoBehaviour
         {
             pInv.uiManager.RefreshUI();
             sInv.uiManager.RefreshUI();
-            Debug.Log("<color=green>【仓库】一键入库完成！</color>");
+            Debug.Log("<color=green>All items deposited into stash!</color>");
         }
     }
 
@@ -79,8 +79,9 @@ public class ShelterStashChest : MonoBehaviour
             style.normal.textColor = Color.yellow;
             style.fontStyle = FontStyle.Bold;
 
-            string prompt = (stashUI != null && stashUI.IsOpen()) ? "按 [E] 关闭 | 按 [G] 一键入库" : "按 [E] 打开仓库";
-            GUI.Label(new Rect(screenPos.x - 80, Screen.height - screenPos.y - 70, 250, 30), prompt, style);
+            string prompt = (stashUI != null && stashUI.IsOpen()) ? "Press [E] to Close / [G] to Deposit All" : "Press [E] to Open Stash";
+
+            GUI.Label(new Rect(screenPos.x - 80, Screen.height - screenPos.y - 70, 300, 30), prompt, style);
         }
     }
 }
