@@ -2,11 +2,10 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-// Path: Assets/Scripts/Item/ItemDatabase.cs
+// 路径: Assets/Scripts/Item/ItemDatabase.cs
 public class ItemDatabase : MonoBehaviour
 {
     public static ItemDatabase Instance { get; private set; }
-
     public List<ItemData> allItems = new List<ItemData>();
 
     private void Awake()
@@ -36,13 +35,10 @@ public class ItemDatabase : MonoBehaviour
                 else if (item.quality == "Rare") item.itemColor = new Color(0.2f, 0.6f, 1f);
                 else if (item.quality == "Legendary") item.itemColor = new Color(1f, 0.8f, 0f);
 
-                // 【正式版加载逻辑】：严格按照物品名称精准匹配图片
                 item.iconSprite = Resources.Load<Sprite>($"ItemIcons/{item.itemName}");
-
-                // 如果没找到同名图片，在控制台发出警告，方便排查错别字或漏传的图片
                 if (item.iconSprite == null)
                 {
-                    Debug.LogWarning($"[Icon Missing] 找不到图片: {item.itemName}，请检查 Resources/ItemIcons/ 文件夹下是否有同名图片！");
+                    Debug.LogWarning($"[Icon Missing] 找不到图标: {item.itemName}");
                 }
             }
             Debug.Log($"Successfully loaded JSON item database, containing {allItems.Count} items!");
@@ -53,9 +49,10 @@ public class ItemDatabase : MonoBehaviour
         }
     }
 
-    public ItemData GetRandomLoot()
+    // 【核心修改】加入 isPrecious 参数，判断是否来自珍贵宝箱
+    public ItemData GetRandomLoot(bool isPrecious = false)
     {
-        string targetQuality = GetRandomQuality();
+        string targetQuality = GetRandomQuality(isPrecious);
         Vector2Int targetSize = GetRandomSize();
 
         List<ItemData> matches = allItems.Where(i => i.quality == targetQuality && i.width == targetSize.x && i.height == targetSize.y).ToList();
@@ -72,12 +69,25 @@ public class ItemDatabase : MonoBehaviour
         }
     }
 
-    private string GetRandomQuality()
+    // 【核心修改】双轨制爆率算法
+    private string GetRandomQuality(bool isPrecious)
     {
         float roll = Random.Range(0f, 100f);
-        if (roll < 60f) return "Common";
-        if (roll < 92f) return "Rare";
-        return "Legendary";
+
+        if (isPrecious)
+        {
+            // 珍贵宝箱的爆率 (Legendary 概率大幅提升到 30%!)
+            if (roll < 20f) return "Common";    // 20% 普通
+            if (roll < 70f) return "Rare";      // 50% 稀有
+            return "Legendary";                 // 30% 传说
+        }
+        else
+        {
+            // 普通宝箱的爆率
+            if (roll < 60f) return "Common";    // 60% 普通
+            if (roll < 92f) return "Rare";      // 32% 稀有
+            return "Legendary";                 // 8% 传说
+        }
     }
 
     private Vector2Int GetRandomSize()

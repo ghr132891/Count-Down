@@ -231,7 +231,7 @@ MonoBehaviour:
   attackPoint: {fileID: 8378571452051551852}
   attackRange: 1
   stopDistance: 1
-  attackDamage: 0
+  attackDamage: 20
   attackRate: 1
   playerLayer:
     serializedVersion: 2

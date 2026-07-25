@@ -26,6 +26,7 @@ public class PlayerController : BaseEntity
     public float minRecoveryRate = 5f;
     public float maxRecoveryRate = 25f;
     public float recoveryThreshold = 20f;
+
     private bool isSprinting = false;
     private bool isExhausted = false;
     private float nextAttackTime = 0f;
@@ -35,6 +36,9 @@ public class PlayerController : BaseEntity
         base.Awake();
         mainCamera = Camera.main;
         if (animator == null) animator = GetComponentInChildren<Animator>();
+
+        // 【新增】游戏刚启动时，直接拉满所有状态
+        RestoreFullStats();
     }
 
     private void Update()
@@ -43,14 +47,13 @@ public class PlayerController : BaseEntity
         movementInput.y = Input.GetAxisRaw("Vertical");
 
         HandleStamina();
-        HandleFacing(); // [重写] 基于移动按键的翻转逻辑
+        HandleFacing();
 
         if (Input.GetMouseButtonDown(0) && Time.time >= nextAttackTime)
         {
             MeleeAttack();
             nextAttackTime = Time.time + attackRate;
         }
-
         UpdateAnimations();
     }
 
@@ -70,6 +73,7 @@ public class PlayerController : BaseEntity
     private void HandleStamina()
     {
         bool wantToSprint = Input.GetKey(KeyCode.LeftShift) && movementInput.magnitude > 0;
+
         if (wantToSprint && !isExhausted)
         {
             isSprinting = true;
@@ -100,23 +104,19 @@ public class PlayerController : BaseEntity
         float currentSpeed = moveSpeed;
         if (isExhausted) currentSpeed = exhaustedSpeed;
         else if (isSprinting) currentSpeed = sprintSpeed;
-
         rb.linearVelocity = movementInput.normalized * currentSpeed;
     }
 
-    // --- [核心修改] 完全根据水平移动按键来决定翻转 ---
     private void HandleFacing()
     {
-        rb.rotation = 0f; // 锁定 Z 轴物理旋转
-
-        // 只要按下了 A 键 (<-) 或 D 键 (->)，就直接控制 Y 轴旋转
+        rb.rotation = 0f;
         if (movementInput.x > 0.01f)
         {
-            transform.rotation = Quaternion.Euler(0, 0, 0); // 朝右
+            transform.rotation = Quaternion.Euler(0, 0, 0);
         }
         else if (movementInput.x < -0.01f)
         {
-            transform.rotation = Quaternion.Euler(0, 180, 0); // 朝左
+            transform.rotation = Quaternion.Euler(0, 180, 0);
         }
     }
 
@@ -138,20 +138,13 @@ public class PlayerController : BaseEntity
         Gizmos.DrawWireSphere(attackPoint.position, attackRange);
     }
 
-    // --- 【新增】供剧情系统调用的深层属性修改接口 ---
     public void ModifyCoreStats(float hpDelta, float maxHpDelta, float maxStaminaDelta)
     {
-        // 1. 处理最大值变动 (确保不会降到 1 以下)
         maxHealth = Mathf.Max(1f, maxHealth + maxHpDelta);
         maxStamina = Mathf.Max(1f, maxStamina + maxStaminaDelta);
-
-        // 2. 处理当前血量变动 (恢复或受伤)
         currentHealth = Mathf.Clamp(currentHealth + hpDelta, 0, maxHealth);
-
-        // 3. 约束当前体力不超过新上限
         currentStamina = Mathf.Clamp(currentStamina, 0, maxStamina);
-
-        Debug.Log($"玩家属性已更新: 最大血量={maxHealth}, 最大体力={maxStamina}");
+        Debug.Log($"MaxHp={maxHealth}, MaxStamina={maxStamina}");
 
         if (currentHealth <= 0)
         {
@@ -161,9 +154,14 @@ public class PlayerController : BaseEntity
 
     protected override void Die()
     {
-        base.Die();
         if (GameManager.Instance != null) GameManager.Instance.PlayerDied();
     }
 
-
+    // --- 【核心修改】新增一键满血满蓝方法 ---
+    public void RestoreFullStats()
+    {
+        currentHealth = maxHealth;
+        currentStamina = maxStamina;
+        isExhausted = false; // 解除强制不能奔跑的力竭状态
+    }
 }

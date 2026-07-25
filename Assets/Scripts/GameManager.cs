@@ -1,4 +1,14 @@
 using UnityEngine;
+using System.Collections.Generic;
+
+[System.Serializable]
+public class ChestSpawnConfig
+{
+    public Transform spawnLocation;
+    public int normalChestCount = 1;
+    public int preciousChestCount = 0;
+    public float spawnRadius = 2f;
+}
 
 // 路径: Assets/Scripts/GameManager.cs
 public class GameManager : MonoBehaviour
@@ -15,33 +25,25 @@ public class GameManager : MonoBehaviour
     public bool isPlayerInShelter = true;
 
     [Header("Spawn Controllers")]
-    public GameObject[] survivalLootPrefabs; // 依然保留，宝箱开启时需要用到它
-    public GameObject chestPrefab;           // 【新增】地图上生成的宝箱预制体
+    public GameObject[] survivalLootPrefabs;
+    public GameObject chestPrefab;
     public GameObject[] enemyPrefabs;
-    public Transform[] spawnPoints;
+    public Transform[] enemySpawnPoints;
 
-    [Header("Dynamic Spawn Rates")]
-    [Tooltip("第 1 天生成的宝箱总数")]
-    [Range(3, 20)]
-    public int baseChestCount = 6;
+    [Header("Manual Chest Spawn Setup")]
+    public List<ChestSpawnConfig> chestSpawnConfigs = new List<ChestSpawnConfig>();
 
-    [Tooltip("每天增加的宝箱数量")]
-    [Range(0f, 2f)]
-    public float chestIncreasePerDay = 0.5f;
-
-    [Tooltip("第 1 天的基础敌人生成数量")]
-    [Range(1, 30)]
-    public int baseEnemyCount = 5;
-
-    [Tooltip("每天增加的敌人数量")]
-    [Range(0f, 5f)]
-    public float enemyIncreasePerDay = 0.5f;
+    [Header("Enemy Dynamic Spawns")]
+    [Range(1, 30)] public int baseEnemyCount = 5;
+    [Range(0f, 5f)] public float enemyIncreasePerDay = 0.5f;
 
     [Header("Core References")]
     public DailySummaryUI summaryUI;
     public PlayerInventory stashInventory;
     public PlayerController player;
-    public Transform shelterSpawnPoint;
+
+    [Tooltip("玩家死亡复活时的具体位置（拖入避难所里的一个空物体）")]
+    public Transform shelterSpawnPoint; // <--- 关键：这就是复活位置！
 
     private void Awake()
     {
@@ -80,6 +82,8 @@ public class GameManager : MonoBehaviour
         isTimerRunning = false;
         isPlayerInShelter = true;
 
+        if (player != null) player.RestoreFullStats();
+
         RefreshMap();
 
         if (currentDay > 1 && SurvivalManager.Instance != null)
@@ -102,22 +106,40 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // --- 【死亡与复活核心逻辑】 ---
+
     public void PlayerDied()
     {
         isDayActive = false;
         isTimerRunning = false;
 
+        // 死亡时，直接呼出死亡 UI 界面，等待玩家点击
+        if (UIManager.Instance != null) UIManager.Instance.ShowDeathPanel();
+    }
+
+    public void ExecutePlayerRespawn()
+    {
+        // 1. 扣除生存物资作为死亡惩罚
         if (SurvivalManager.Instance != null) SurvivalManager.Instance.PenalizeDeath();
 
+        // 2. 将玩家强行拉回避难所的“复活点”位置，并恢复满状态
         if (player != null && shelterSpawnPoint != null)
         {
             player.transform.position = shelterSpawnPoint.position;
-            player.currentHealth = player.maxHealth;
+            player.RestoreFullStats();
+        }
+        else
+        {
+            Debug.LogError("复活失败：GameManager 中没有绑定 Player 或是 Shelter Spawn Point！");
         }
 
         isPlayerInShelter = true;
+
+        // 3. 弹出夜晚结算界面
         ShowSummary();
     }
+
+    // ---------------------------------
 
     private void ShowSummary()
     {
@@ -132,34 +154,47 @@ public class GameManager : MonoBehaviour
 
     private void RefreshMap()
     {
-        // 销毁上一天遗留的掉落物、怪物，现在加上还要销毁上一天遗留的宝箱
         foreach (var loot in FindObjectsByType<InteractableLoot>(FindObjectsSortMode.None)) Destroy(loot.gameObject);
         foreach (var enemy in FindObjectsByType<EnemyController>(FindObjectsSortMode.None)) Destroy(enemy.gameObject);
         foreach (var chest in FindObjectsByType<ChestController>(FindObjectsSortMode.None)) Destroy(chest.gameObject);
 
-        if (spawnPoints == null || spawnPoints.Length == 0) return;
-
-        // --- 核心修改：改为在地图上生成宝箱 ---
-        int todayChestCount = baseChestCount + Mathf.FloorToInt(currentDay * chestIncreasePerDay);
-        for (int i = 0; i < todayChestCount; i++)
+        if (chestPrefab != null)
         {
-            Transform sp = spawnPoints[Random.Range(0, spawnPoints.Length)];
-            if (chestPrefab != null)
+            foreach (var config in chestSpawnConfigs)
             {
-                Vector2 offset = Random.insideUnitCircle * 2f;
-                Instantiate(chestPrefab, (Vector2)sp.position + offset, Quaternion.identity);
+                if (config.spawnLocation == null) continue;
+
+                for (int i = 0; i < config.normalChestCount; i++)
+                {
+                    Vector2 offset = config.spawnRadius > 0 ? Random.insideUnitCircle * config.spawnRadius : Vector2.zero;
+                    Vector3 pos = config.spawnLocation.position + (Vector3)offset;
+                    GameObject chestObj = Instantiate(chestPrefab, pos, Quaternion.identity);
+                    ChestController chest = chestObj.GetComponent<ChestController>();
+                    if (chest != null) chest.SetupChest(ChestController.ChestType.Normal);
+                }
+
+                for (int i = 0; i < config.preciousChestCount; i++)
+                {
+                    Vector2 offset = config.spawnRadius > 0 ? Random.insideUnitCircle * config.spawnRadius : Vector2.zero;
+                    Vector3 pos = config.spawnLocation.position + (Vector3)offset;
+                    GameObject chestObj = Instantiate(chestPrefab, pos, Quaternion.identity);
+                    ChestController chest = chestObj.GetComponent<ChestController>();
+                    if (chest != null) chest.SetupChest(ChestController.ChestType.Precious);
+                }
             }
         }
 
-        // 生成敌人逻辑不变
-        int todayEnemyCount = baseEnemyCount + Mathf.FloorToInt(currentDay * enemyIncreasePerDay);
-        for (int i = 0; i < todayEnemyCount; i++)
+        if (enemySpawnPoints != null && enemySpawnPoints.Length > 0)
         {
-            Transform sp = spawnPoints[Random.Range(0, spawnPoints.Length)];
-            if (enemyPrefabs.Length > 0)
+            int todayEnemyCount = baseEnemyCount + Mathf.FloorToInt(currentDay * enemyIncreasePerDay);
+            for (int i = 0; i < todayEnemyCount; i++)
             {
-                GameObject prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
-                Instantiate(prefab, sp.position, Quaternion.identity);
+                Transform sp = enemySpawnPoints[Random.Range(0, enemySpawnPoints.Length)];
+                if (enemyPrefabs.Length > 0)
+                {
+                    GameObject prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
+                    Instantiate(prefab, sp.position, Quaternion.identity);
+                }
             }
         }
     }

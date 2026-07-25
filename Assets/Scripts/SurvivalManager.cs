@@ -60,8 +60,14 @@ public class SurvivalManager : MonoBehaviour
 
     private void CheckGameOver()
     {
-        if (totalFoodValue <= 0) Debug.Log("[Game Over] Food value depleted!");
-        if (totalWaterValue <= 0) Debug.Log("[Game Over] Water value depleted!");
-        if (totalDurabilityValue <= 0) Debug.Log("[Game Over] Shelter durability reached zero, shelter breached!");
+        // 只要有一项资源归零，即判定游戏失败
+        if (totalFoodValue <= 0 || totalWaterValue <= 0 || totalDurabilityValue <= 0)
+        {
+            Debug.Log("<color=red>[Game Over] 核心生存物资耗尽，游戏失败！</color>");
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowGameOverPanel();
+            }
+        }
     }
 }

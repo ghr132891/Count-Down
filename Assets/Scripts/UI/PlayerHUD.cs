@@ -5,62 +5,92 @@ using TMPro;
 // 路径: Assets/Scripts/UI/PlayerHUD.cs
 public class PlayerHUD : MonoBehaviour
 {
-    [Header("玩家引用")]
+    [Header("Core References")]
     public PlayerController player;
 
-    [Header("UI 引用")]
+    [Header("UI Sliders & Texts")]
     public Slider hpSlider;
     public Slider staminaSlider;
-    public TextMeshProUGUI hpText;
-    public TextMeshProUGUI timerText;
+    public TextMeshProUGUI timerText; // 已经去掉了 hpText
+
+    [Header("UI Optimization & Polish")]
+    [Tooltip("血条和体力条发生变化时的平滑过渡速度")]
+    public float sliderLerpSpeed = 10f;
+
+    private int lastTimerSeconds = -1; // 仅保留计时器的缓存
 
     private void Update()
     {
-        // 1. 刷新玩家血量与体力
         if (player != null)
         {
-            if (hpSlider != null)
-            {
-                hpSlider.maxValue = player.maxHealth;
-                hpSlider.value = player.currentHealth;
-            }
-
-            if (staminaSlider != null)
-            {
-                staminaSlider.maxValue = player.maxStamina;
-                staminaSlider.value = player.currentStamina;
-            }
-
-            if (hpText != null) hpText.text = $"{Mathf.RoundToInt(player.currentHealth)} / {player.maxHealth}";
+            UpdateHealthUI();
+            UpdateStaminaUI();
         }
 
-        // 2. 刷新 8 分钟倒计时状态
+        UpdateTimerUI();
+    }
+
+    private void UpdateHealthUI()
+    {
+        if (hpSlider != null)
+        {
+            if (hpSlider.maxValue != player.maxHealth)
+                hpSlider.maxValue = player.maxHealth;
+
+            hpSlider.value = Mathf.Lerp(hpSlider.value, player.currentHealth, Time.deltaTime * sliderLerpSpeed);
+        }
+    }
+
+    private void UpdateStaminaUI()
+    {
+        if (staminaSlider != null)
+        {
+            if (staminaSlider.maxValue != player.maxStamina)
+                staminaSlider.maxValue = player.maxStamina;
+
+            staminaSlider.value = Mathf.Lerp(staminaSlider.value, player.currentStamina, Time.deltaTime * sliderLerpSpeed);
+        }
+    }
+
+    private void UpdateTimerUI()
+    {
         if (timerText != null)
         {
             if (GameManager.Instance != null && GameManager.Instance.isDayActive)
             {
-                // 检测计时器是否已经启动
                 if (GameManager.Instance.isTimerRunning)
                 {
-                    int minutes = Mathf.FloorToInt(GameManager.Instance.currentTime / 60);
-                    int seconds = Mathf.FloorToInt(GameManager.Instance.currentTime % 60);
+                    int currentSeconds = Mathf.FloorToInt(GameManager.Instance.currentTime);
+                    if (currentSeconds != lastTimerSeconds)
+                    {
+                        int minutes = currentSeconds / 60;
+                        int seconds = currentSeconds % 60;
 
-                    if (GameManager.Instance.currentTime < 60) timerText.color = Color.red;
-                    else timerText.color = Color.white;
+                        if (GameManager.Instance.currentTime < 60) timerText.color = Color.red;
+                        else timerText.color = Color.white;
 
-                    timerText.text = $"Time Left: {minutes:00}:{seconds:00}";
+                        timerText.text = $"Time Left: {minutes:00}:{seconds:00}";
+                        lastTimerSeconds = currentSeconds;
+                    }
                 }
                 else
                 {
-                    // 白天已经开始，但玩家还在家里摸鱼没出门
-                    timerText.text = "Waiting to leave (Timer not started)";
-                    timerText.color = Color.black;
+                    if (lastTimerSeconds != -2)
+                    {
+                        timerText.text = "Waiting to leave (Timer not started)";
+                        timerText.color = Color.black;
+                        lastTimerSeconds = -2;
+                    }
                 }
             }
             else
             {
-                timerText.text = "Time stopped / Summarizing";
-                timerText.color = Color.yellow;
+                if (lastTimerSeconds != -3)
+                {
+                    timerText.text = "Time stopped / Summarizing";
+                    timerText.color = Color.yellow;
+                    lastTimerSeconds = -3;
+                }
             }
         }
     }
