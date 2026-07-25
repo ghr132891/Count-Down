@@ -1,2 +1,2 @@
 # Count Down
-This is a demo about searching, hiting and withdrawing
+This is a game demo about searching, hiting and withdrawing
