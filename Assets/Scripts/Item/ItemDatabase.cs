@@ -30,30 +30,22 @@ public class ItemDatabase : MonoBehaviour
             ItemDataList loadedData = JsonUtility.FromJson<ItemDataList>(jsonFile.text);
             allItems = loadedData.items;
 
-            // 【测试特供】一次性加载 ItemIcons 文件夹下的所有图片作为备用图库
-            Sprite[] testSprites = Resources.LoadAll<Sprite>("ItemIcons");
-
             foreach (var item in allItems)
             {
                 if (item.quality == "Common") item.itemColor = Color.gray;
                 else if (item.quality == "Rare") item.itemColor = new Color(0.2f, 0.6f, 1f);
                 else if (item.quality == "Legendary") item.itemColor = new Color(1f, 0.8f, 0f);
 
-                // 1. 尝试精准匹配（如果以后你补充了对应的同名图片，会优先用对的）
+                // 【正式版加载逻辑】：严格按照物品名称精准匹配图片
                 item.iconSprite = Resources.Load<Sprite>($"ItemIcons/{item.itemName}");
 
-                // 2. 【测试特供】如果没找到同名图片，且备用图库里有图，就随机抽一张给它用
-                if (item.iconSprite == null && testSprites.Length > 0)
+                // 如果没找到同名图片，在控制台发出警告，方便排查错别字或漏传的图片
+                if (item.iconSprite == null)
                 {
-                    item.iconSprite = testSprites[Random.Range(0, testSprites.Length)];
-                }
-                // 3. 如果连备用图库都是空的，才会报错
-                else if (item.iconSprite == null)
-                {
-                    Debug.LogWarning($"[Icon Missing] Cannot find any icon for: {item.itemName}");
+                    Debug.LogWarning($"[Icon Missing] 找不到图片: {item.itemName}，请检查 Resources/ItemIcons/ 文件夹下是否有同名图片！");
                 }
             }
-            Debug.Log($"Successfully loaded JSON item database, containing {allItems.Count} items! Loaded {testSprites.Length} test sprites.");
+            Debug.Log($"Successfully loaded JSON item database, containing {allItems.Count} items!");
         }
         else
         {
@@ -114,7 +106,7 @@ public class ItemDatabase : MonoBehaviour
             waterValue = source.waterValue,
             durabilityValue = source.durabilityValue,
             itemColor = source.itemColor,
-            iconSprite = source.iconSprite // 确保克隆时把抽到的图片也带上
+            iconSprite = source.iconSprite
         };
     }
 }

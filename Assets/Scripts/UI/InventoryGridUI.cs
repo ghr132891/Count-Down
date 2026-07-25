@@ -11,6 +11,13 @@ public class InventoryGridUI : MonoBehaviour
     public CanvasGroup uiCanvasGroup;
     public bool isStash = false;
 
+    [Header("Background Settings (Padding)")]
+    public RectTransform panelBackground; // 【新增】独立的背景图层
+    public int paddingLeft = 30;          // 【新增】左侧留白距离
+    public int paddingRight = 30;         // 【新增】右侧留白距离
+    public int paddingTop = 40;           // 【新增】顶部留白距离
+    public int paddingBottom = 40;        // 【新增】底部留白距离
+
     public Transform backgroundContainer;
     public Transform itemContainer;
 
@@ -25,8 +32,6 @@ public class InventoryGridUI : MonoBehaviour
     private void Awake()
     {
         AllGrids.Add(this);
-        // 【核心修复】：强行自动双向绑定，再也不怕你在编辑器里漏拖槽位了！
-        if (inventory != null) inventory.uiManager = this;
     }
 
     private void OnDestroy()
@@ -42,9 +47,11 @@ public class InventoryGridUI : MonoBehaviour
         }
 
         Vector2 exactGridSize = new Vector2(inventory.columns * cellSize, inventory.rows * cellSize);
-
         SetupInnerContainer(backgroundContainer.GetComponent<RectTransform>(), exactGridSize);
         SetupInnerContainer(itemContainer.GetComponent<RectTransform>(), exactGridSize);
+
+        // --- 【核心修改】应用背景图和边距 ---
+        SetupBackground(exactGridSize);
 
         GenerateBackgroundGrid(0, inventory.rows);
         RefreshUI();
@@ -62,18 +69,30 @@ public class InventoryGridUI : MonoBehaviour
     public void SetupInnerContainer(RectTransform rect, Vector2 size)
     {
         if (rect == null) return;
-
-        // 1. 将锚点(Anchor)设为父物体背景板的正中心
         rect.anchorMin = new Vector2(0.5f, 0.5f);
         rect.anchorMax = new Vector2(0.5f, 0.5f);
-
-        // 2. 保持轴心(Pivot)在左上角，这样格子的生成坐标 (x, -y) 就不会乱
         rect.pivot = new Vector2(0, 1);
-
         rect.sizeDelta = size;
-
-        // 3. 【核心修改】因为轴心在左上角，所以往左移一半宽度，往上移一半高度，即可实现整体完美居中
         rect.anchoredPosition = new Vector2(-size.x / 2f, size.y / 2f);
+    }
+
+    // --- 【新增方法】动态计算羊皮纸的大小和偏移 ---
+    private void SetupBackground(Vector2 gridSize)
+    {
+        if (panelBackground == null) return;
+
+        panelBackground.anchorMin = new Vector2(0.5f, 0.5f);
+        panelBackground.anchorMax = new Vector2(0.5f, 0.5f);
+        panelBackground.pivot = new Vector2(0, 1);
+
+        // 加上四周边距，撑大羊皮纸
+        panelBackground.sizeDelta = new Vector2(gridSize.x + paddingLeft + paddingRight, gridSize.y + paddingTop + paddingBottom);
+
+        // 向左上方偏移，把格子包裹在中心
+        panelBackground.anchoredPosition = new Vector2(-gridSize.x / 2f - paddingLeft, gridSize.y / 2f + paddingTop);
+
+        // 强制渲染在最底层，防止挡住格子
+        panelBackground.SetAsFirstSibling();
     }
 
     private void GenerateBackgroundGrid(int startRow, int endRow)
@@ -91,16 +110,17 @@ public class InventoryGridUI : MonoBehaviour
                 rect.anchoredPosition = new Vector2(x * cellSize, -y * cellSize);
             }
         }
-
         if (itemContainer != null) itemContainer.SetAsLastSibling();
     }
 
     public void ExpandUI(int oldRows, int newRows)
     {
         Vector2 exactGridSize = new Vector2(inventory.columns * cellSize, newRows * cellSize);
-
         SetupInnerContainer(backgroundContainer.GetComponent<RectTransform>(), exactGridSize);
         SetupInnerContainer(itemContainer.GetComponent<RectTransform>(), exactGridSize);
+
+        // 扩展背包时，同步放大羊皮纸
+        SetupBackground(exactGridSize);
 
         GenerateBackgroundGrid(oldRows, newRows);
     }
@@ -108,6 +128,7 @@ public class InventoryGridUI : MonoBehaviour
     public void RefreshUI()
     {
         foreach (Transform child in itemContainer) Destroy(child.gameObject);
+
         foreach (var pItem in inventory.placedItems)
         {
             GameObject obj = Instantiate(itemUIPrefab, itemContainer);

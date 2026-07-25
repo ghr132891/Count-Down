@@ -3,13 +3,9 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 // Path: Assets/Scripts/UI/InventoryItemUI.cs
-// 【核心修改】继承 IPointerClickHandler 以接收鼠标点击事件
-public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
+// 【核心修改】引入了 IPointerEnterHandler (鼠标移入) 和 IPointerExitHandler (鼠标移出)
+public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
-    // 全局静态变量，用于记录当前唯一被点击查看的物品
-    public static InventoryItemUI SelectedItem;
-    private static Texture2D tooltipBgTexture;
-
     private InventoryGridUI gridUI;
     private ItemInstance itemInstance;
     private RectTransform rectTransform;
@@ -27,7 +23,7 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private Vector2 gridGrabOffset;
 
     [Header("Drop Settings")]
-    public float maxDropDistance = 3f; // 允许玩家丢弃物品的最大范围
+    public float maxDropDistance = 3f;
 
     public void Initialize(InventoryGridUI grid, ItemInstance item, int x, int y)
     {
@@ -106,23 +102,41 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         }
     }
 
-    // 【新增】处理鼠标左键查看信息和右键丢弃
+    // --- 【现代悬浮提示逻辑】 ---
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (isDragging) return;
+
+        // 这里把颜色改成了更深的红、蓝、绿，防止在羊皮纸上看不清
+        string info = $"<b><color=#{ColorUtility.ToHtmlStringRGB(itemInstance.data.itemColor)}>{itemInstance.data.quality} {itemInstance.data.itemName}</color></b>\n" +
+                      $"Category: {itemInstance.data.category}\n" +
+                      $"Size: {itemInstance.Width}x{itemInstance.Height}\n\n" +
+                      $"<color=#8B0000>Food: {itemInstance.data.foodValue}</color>\n" +
+                      $"<color=#00008B>Water: {itemInstance.data.waterValue}</color>\n" +
+                      $"<color=#006400>Durability: {itemInstance.data.durabilityValue}</color>\n\n" +
+                      $"<size=12><i>Right-Click: Drop Item</i></size>";
+
+        if (TooltipManager.Instance != null) TooltipManager.Instance.ShowTooltip(info);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (TooltipManager.Instance != null) TooltipManager.Instance.HideTooltip();
+    }
+
+    // --- 【右键丢弃逻辑】 ---
     public void OnPointerClick(PointerEventData eventData)
     {
         if (eventData.button == PointerEventData.InputButton.Right)
         {
+            if (TooltipManager.Instance != null) TooltipManager.Instance.HideTooltip();
             DropItemToWorld();
-        }
-        else if (eventData.button == PointerEventData.InputButton.Left)
-        {
-            if (SelectedItem == this) SelectedItem = null;
-            else SelectedItem = this;
         }
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        SelectedItem = null; // 拖拽时自动关闭信息面板，防止遮挡视野
+        if (TooltipManager.Instance != null) TooltipManager.Instance.HideTooltip(); // 拖拽时隐藏提示框
 
         originalParent = transform.parent;
         wasRotated = itemInstance.isRotated;
@@ -171,7 +185,6 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             }
         }
 
-        // 【核心修改】如果拖到了没有任何 UI 网格的地方，执行拖拽丢弃
         if (targetGrid == null)
         {
             DropItemToWorld();
@@ -211,30 +224,26 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         }
     }
 
-    // 【新增】安全丢弃物品到真实世界的逻辑
     private void DropItemToWorld()
     {
         if (GameManager.Instance == null || GameManager.Instance.survivalLootPrefabs.Length == 0) return;
 
-        // 1. 获取鼠标所在的世界坐标
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mouseWorldPos.z = 0f;
 
-        // 2. 限制丢弃距离，防止物品被扔到穿墙或者超远距离
         Vector3 playerPos = GameManager.Instance.player.transform.position;
         Vector3 direction = mouseWorldPos - playerPos;
         Vector3 dropPos;
 
         if (direction.magnitude > maxDropDistance)
         {
-            dropPos = playerPos + direction.normalized * maxDropDistance; // 限制在最大半径内
+            dropPos = playerPos + direction.normalized * maxDropDistance;
         }
         else
         {
             dropPos = mouseWorldPos;
         }
 
-        // 3. 生成模型并转移数据
         GameObject prefab = GameManager.Instance.survivalLootPrefabs[0];
         GameObject lootObj = Instantiate(prefab, dropPos, Quaternion.identity);
 
@@ -244,54 +253,7 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             lootScript.SetupDroppedItem(itemInstance);
         }
 
-        // 4. 从背包/仓库彻底移除
-        if (SelectedItem == this) SelectedItem = null;
         gridUI.inventory.RemoveItem(itemInstance);
         gridUI.RefreshUI();
-    }
-
-    // 【新增】使用 OnGUI 绘制极简且在最顶层的信息浮窗，完全无视 UI 层级遮挡问题
-    private void OnGUI()
-    {
-        if (SelectedItem == this && itemInstance != null)
-        {
-            Vector3 screenPos = Input.mousePosition;
-            float guiY = Screen.height - screenPos.y;
-
-            GUIStyle style = new GUIStyle(GUI.skin.box);
-            style.alignment = TextAnchor.UpperLeft;
-            style.fontSize = 16;
-            style.richText = true;
-
-            // 缓存背景贴图，避免每帧重复创建引发内存泄漏
-            if (tooltipBgTexture == null)
-            {
-                tooltipBgTexture = new Texture2D(1, 1);
-                tooltipBgTexture.SetPixel(0, 0, new Color(0, 0, 0, 0.85f));
-                tooltipBgTexture.Apply();
-            }
-            style.normal.background = tooltipBgTexture;
-            style.normal.textColor = Color.white;
-
-            string info = $"<b><color=#{ColorUtility.ToHtmlStringRGB(itemInstance.data.itemColor)}>{itemInstance.data.quality} {itemInstance.data.itemName}</color></b>\n" +
-                          $"Category: {itemInstance.data.category}\n" +
-                          $"Size: {itemInstance.Width}x{itemInstance.Height}\n\n" +
-                          $"<color=#ffaa00>Food: {itemInstance.data.foodValue}</color>\n" +
-                          $"<color=#00ccff>Water: {itemInstance.data.waterValue}</color>\n" +
-                          $"<color=#aaffaa>Durability: {itemInstance.data.durabilityValue}</color>\n\n" +
-                          $"<size=12><i>Right-Click: Drop Item</i></size>";
-
-            // 动态计算文字宽高
-            GUIContent content = new GUIContent(info);
-            Vector2 size = style.CalcSize(content);
-
-            // 确保面板紧随鼠标且不会跑出屏幕之外
-            float x = screenPos.x + 15f;
-            float y = guiY + 15f;
-            if (x + size.x > Screen.width) x = Screen.width - size.x - 10f;
-            if (y + size.y > Screen.height) y = Screen.height - size.y - 10f;
-
-            GUI.Box(new Rect(x, y, size.x + 20, size.y + 20), info, style);
-        }
     }
 }
