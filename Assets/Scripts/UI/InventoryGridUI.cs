@@ -155,5 +155,11 @@ public class InventoryGridUI : MonoBehaviour
         uiCanvasGroup.alpha = active ? 1f : 0f;
         uiCanvasGroup.interactable = active;
         uiCanvasGroup.blocksRaycasts = active;
+
+        // 【核心修复】如果面板被关闭，强制让可能存在的属性标签也跟着关闭
+        if (!active && TooltipManager.Instance != null)
+        {
+            TooltipManager.Instance.HideTooltip();
+        }
     }
 }
