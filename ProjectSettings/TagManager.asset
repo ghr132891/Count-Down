@@ -13,7 +13,7 @@ TagManager:
   - UI
   - Player
   - Enemy
-  - 
+  - Obstacle
   - 
   - 
   - 
@@ -52,6 +52,9 @@ TagManager:
     locked: 0
   - name: layer 4 elevated ground
     uniqueID: 2596077891
+    locked: 0
+  - name: Obstacle
+    uniqueID: 3385443755
     locked: 0
   - name: Layer 5
     uniqueID: 303173879

@@ -128,7 +128,7 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 303173879
-  m_SortingLayer: 5
+  m_SortingLayer: 6
   m_SortingOrder: 0
   m_Sprite: {fileID: 7384290322352760091, guid: 6412e5833a36d404197baf7ea7d7689f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -222,7 +222,12 @@ MonoBehaviour:
   currentState: 0
   animator: {fileID: 9094102437535105612}
   viewRadius: 6
-  viewAngle: 60
+  viewAngle: 80
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  viewMeshFilter: {fileID: 0}
+  meshResolution: 30
   roamRadius: 4
   roamSpeed: 2
   roamWaitTime: 2
