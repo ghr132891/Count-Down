@@ -23,11 +23,11 @@ public class EnemyController : BaseEntity
     [Tooltip("在此勾选可以遮挡怪物视线的障碍物图层（如墙壁、建筑物）")]
     public LayerMask obstacleLayer;
 
-    // 视线可视化相关（全部改为私有，由代码全自动接管）
+    // --- 【核心修改】全部换成 LineRenderer ---
+    [Header("Vision Visualization")]
     public int meshResolution = 30;
-    private GameObject visionConeObj; // 独立的光束物体
-    private MeshFilter viewMeshFilter;
-    private Mesh viewMesh;
+    private GameObject visionConeObj;
+    private LineRenderer lineRenderer;
 
     [Header("Roam Settings")]
     public float roamRadius = 4f;
@@ -66,22 +66,35 @@ public class EnemyController : BaseEntity
             targetPlayer = playerObj.transform;
         }
 
-        // --- 【终极剥离法：全自动生成独立光束，彻底粉碎翻转隐形Bug】 ---
-        visionConeObj = new GameObject("AutoVisionCone_" + gameObject.name);
-        // 【核心】：不设置为子物体，放在世界根目录，避开怪物负缩放的毒害
-        visionConeObj.transform.position = transform.position;
+        // --- 【全自动生成激光扫描轮廓】 ---
+        visionConeObj = new GameObject("VisionScannerLine_" + gameObject.name);
+        lineRenderer = visionConeObj.AddComponent<LineRenderer>();
 
-        viewMeshFilter = visionConeObj.AddComponent<MeshFilter>();
-        MeshRenderer mr = visionConeObj.AddComponent<MeshRenderer>();
+        // 强行寻找保底无光照材质
+        Shader lineShader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+        if (lineShader == null) lineShader = Shader.Find("Sprites/Default");
+        lineRenderer.material = new Material(lineShader);
 
-        // 使用底层 UI 材质：这个材质自带透明通道、无视环境光、且永远不会被剔除
-        Material mat = new Material(Shader.Find("UI/Default"));
-        mr.material = mat;
-        mr.sortingOrder = 32000; // 极高图层，稳压所有地图瓦片
+        // 设置线条颜色、宽度和闭合状态
+        lineRenderer.startColor = new Color(1f, 0.9f, 0f, 0.8f); // 亮黄色
+        lineRenderer.endColor = new Color(1f, 0.9f, 0f, 0.8f);
+        lineRenderer.startWidth = 0.06f; // 线条粗细
+        lineRenderer.endWidth = 0.06f;
 
-        viewMesh = new Mesh();
-        viewMesh.name = "View Mesh";
-        viewMeshFilter.mesh = viewMesh;
+        // 【核心修复：直接抄怪物的图层！】因为怪物能显示在地图上，光线跟怪物同一个图层就绝对不会被挡住
+        SpriteRenderer enemySprite = GetComponentInChildren<SpriteRenderer>();
+        if (enemySprite != null)
+        {
+            lineRenderer.sortingLayerID = enemySprite.sortingLayerID; // 复制怪物的大图层
+            lineRenderer.sortingOrder = enemySprite.sortingOrder + 100; // 在怪物上方 100 层
+        }
+        else
+        {
+            lineRenderer.sortingOrder = 32000;
+        }
+
+        lineRenderer.useWorldSpace = true; // 无视父级，直接在世界画线
+        lineRenderer.loop = true; // 将起点和终点连起来，形成闭合的扇形
 
         PickNewRoamTarget();
     }
@@ -109,15 +122,13 @@ public class EnemyController : BaseEntity
 
     private void LateUpdate()
     {
-        // 每帧让光束物体跟着怪物跑，并更新网格
-        if (visionConeObj != null && viewMesh != null)
+        if (lineRenderer != null)
         {
-            visionConeObj.transform.position = transform.position;
             DrawFieldOfView();
         }
     }
 
-    // 防止怪物死亡或被销毁时，光束残留
+    // 防止怪物死亡后扫描线残留
     private void OnDestroy()
     {
         if (visionConeObj != null)
@@ -161,17 +172,19 @@ public class EnemyController : BaseEntity
         }
     }
 
-    // --- 【防弹级：绝对坐标网格绘制法】 ---
     private void DrawFieldOfView()
     {
         int rayCount = meshResolution;
         float angle = -viewAngle / 2f;
         float angleStep = viewAngle / rayCount;
 
-        Vector3[] vertices = new Vector3[rayCount + 2];
-        int[] triangles = new int[rayCount * 6];
+        // 点的数量 = 发射的射线数 + 1个圆心起点
+        lineRenderer.positionCount = rayCount + 2;
 
-        vertices[0] = Vector3.zero; // 局部圆心始终为 0
+        float zOffset = -1f;
+
+        // 顶点 0 始终是怪物圆心
+        lineRenderer.SetPosition(0, new Vector3(rb.position.x, rb.position.y, zOffset));
 
         Vector2 currentFacing = transform.localScale.x > 0 ? Vector2.right : Vector2.left;
         float startingAngle = currentFacing.x > 0 ? 0f : 180f;
@@ -185,48 +198,18 @@ public class EnemyController : BaseEntity
 
             if (hit.collider != null)
             {
-                // 因为光束物体脱离了父级，不再受缩放影响，直接用世界坐标差值！
-                Vector3 localPos = (Vector3)hit.point - visionConeObj.transform.position;
-                localPos.z = 0f;
-                vertices[i + 1] = localPos;
+                // 如果撞墙了，轮廓线就在墙边停下
+                lineRenderer.SetPosition(i + 1, new Vector3(hit.point.x, hit.point.y, zOffset));
             }
             else
             {
-                Vector3 localPos = (Vector3)(dir * viewRadius);
-                localPos.z = 0f;
-                vertices[i + 1] = localPos;
-            }
-
-            if (i < rayCount)
-            {
-                // 双面三角形绘制，无论摄像机怎么看都绝对不可能隐形
-                triangles[i * 6] = 0;
-                triangles[i * 6 + 1] = i + 2;
-                triangles[i * 6 + 2] = i + 1;
-
-                triangles[i * 6 + 3] = 0;
-                triangles[i * 6 + 4] = i + 1;
-                triangles[i * 6 + 5] = i + 2;
+                // 没撞墙，延伸到最远距离
+                Vector3 edgePos = rb.position + dir * viewRadius;
+                lineRenderer.SetPosition(i + 1, new Vector3(edgePos.x, edgePos.y, zOffset));
             }
 
             angle += angleStep;
         }
-
-        viewMesh.Clear();
-        viewMesh.vertices = vertices;
-        viewMesh.triangles = triangles;
-
-        // 直接注入黄色半透明顶点色
-        Color[] colors = new Color[vertices.Length];
-        Color fovColor = new Color(1f, 0.9f, 0f, 0.35f);
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            colors[i] = fovColor;
-        }
-        viewMesh.colors = colors;
-
-        viewMesh.RecalculateNormals();
-        viewMesh.RecalculateBounds();
     }
 
     private void HandleRoaming()
