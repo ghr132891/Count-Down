@@ -10,7 +10,7 @@ public class ChestSpawnConfig
     public float spawnRadius = 2f;
 }
 
-// 路径: Assets/Scripts/GameManager.cs
+// Path: Assets/Scripts/GameManager.cs
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
@@ -30,6 +30,11 @@ public class GameManager : MonoBehaviour
     public GameObject[] enemyPrefabs;
     public Transform[] enemySpawnPoints;
 
+    [Header("Spawn Safety & Obstacle Check")]
+    [Tooltip("在此勾选不可以生成物体的图层（如 Obstacle 建筑物、AirWall 空气墙）")]
+    public LayerMask obstacleLayer; // 【新增】障碍物与地图边缘图层
+    public float enemySpawnRadius = 3f; // 【新增】敌人随机刷新的扩散半径
+
     [Header("Manual Chest Spawn Setup")]
     public List<ChestSpawnConfig> chestSpawnConfigs = new List<ChestSpawnConfig>();
 
@@ -41,9 +46,7 @@ public class GameManager : MonoBehaviour
     public DailySummaryUI summaryUI;
     public PlayerInventory stashInventory;
     public PlayerController player;
-
-    [Tooltip("玩家死亡复活时的具体位置（拖入避难所里的一个空物体）")]
-    public Transform shelterSpawnPoint; // <--- 关键：这就是复活位置！
+    public Transform shelterSpawnPoint;
 
     private void Awake()
     {
@@ -66,7 +69,6 @@ public class GameManager : MonoBehaviour
                 currentTime = 0;
                 isDayActive = false;
                 isTimerRunning = false;
-
                 if (isPlayerInShelter) ShowSummary();
                 else PlayerDied();
             }
@@ -75,7 +77,6 @@ public class GameManager : MonoBehaviour
 
     public void StartNewDay()
     {
-        // 【核心修改】当当前天数超过最大天数时，触发通关界面
         if (currentDay > maxDays)
         {
             Debug.Log("<color=yellow>Game Cleared! You survived all days!</color>");
@@ -92,7 +93,6 @@ public class GameManager : MonoBehaviour
         isPlayerInShelter = true;
 
         if (player != null) player.RestoreFullStats();
-
         RefreshMap();
 
         if (currentDay > 1 && SurvivalManager.Instance != null)
@@ -115,23 +115,17 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // --- 【死亡与复活核心逻辑】 ---
-
     public void PlayerDied()
     {
         isDayActive = false;
         isTimerRunning = false;
-
-        // 死亡时，直接呼出死亡 UI 界面，等待玩家点击
         if (UIManager.Instance != null) UIManager.Instance.ShowDeathPanel();
     }
 
     public void ExecutePlayerRespawn()
     {
-        // 1. 扣除生存物资作为死亡惩罚
         if (SurvivalManager.Instance != null) SurvivalManager.Instance.PenalizeDeath();
 
-        // 2. 将玩家强行拉回避难所的“复活点”位置，并恢复满状态
         if (player != null && shelterSpawnPoint != null)
         {
             player.transform.position = shelterSpawnPoint.position;
@@ -139,16 +133,12 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("复活失败：GameManager 中没有绑定 Player 或是 Shelter Spawn Point！");
+            Debug.LogError("GameManager: Player or Shelter Spawn Point missing!");
         }
 
         isPlayerInShelter = true;
-
-        // 3. 弹出夜晚结算界面
         ShowSummary();
     }
-
-    // ---------------------------------
 
     private void ShowSummary()
     {
@@ -161,12 +151,32 @@ public class GameManager : MonoBehaviour
         StartNewDay();
     }
 
+    // --- 【核心新增：获取非障碍物区域的安全坐标】 ---
+    public Vector3 GetValidSpawnPosition(Vector3 center, float maxRadius, float checkRadius = 0.6f, int maxAttempts = 20)
+    {
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            Vector2 randomOffset = (maxRadius > 0) ? Random.insideUnitCircle * maxRadius : Vector2.zero;
+            Vector3 testPos = center + (Vector3)randomOffset;
+
+            // 检测目标位置周围 checkRadius 范围内是否有障碍物/空气墙
+            if (obstacleLayer == 0 || !Physics2D.OverlapCircle(testPos, checkRadius, obstacleLayer))
+            {
+                return testPos; // 找到无障碍的安全坐标
+            }
+        }
+
+        // 如果尝试 20 次都抽到墙里，退回初始中心点
+        return center;
+    }
+
     private void RefreshMap()
     {
         foreach (var loot in FindObjectsByType<InteractableLoot>(FindObjectsSortMode.None)) Destroy(loot.gameObject);
         foreach (var enemy in FindObjectsByType<EnemyController>(FindObjectsSortMode.None)) Destroy(enemy.gameObject);
         foreach (var chest in FindObjectsByType<ChestController>(FindObjectsSortMode.None)) Destroy(chest.gameObject);
 
+        // 1. 刷新宝箱（带安全碰撞检测）
         if (chestPrefab != null)
         {
             foreach (var config in chestSpawnConfigs)
@@ -175,8 +185,7 @@ public class GameManager : MonoBehaviour
 
                 for (int i = 0; i < config.normalChestCount; i++)
                 {
-                    Vector2 offset = config.spawnRadius > 0 ? Random.insideUnitCircle * config.spawnRadius : Vector2.zero;
-                    Vector3 pos = config.spawnLocation.position + (Vector3)offset;
+                    Vector3 pos = GetValidSpawnPosition(config.spawnLocation.position, config.spawnRadius, 0.6f);
                     GameObject chestObj = Instantiate(chestPrefab, pos, Quaternion.identity);
                     ChestController chest = chestObj.GetComponent<ChestController>();
                     if (chest != null) chest.SetupChest(ChestController.ChestType.Normal);
@@ -184,8 +193,7 @@ public class GameManager : MonoBehaviour
 
                 for (int i = 0; i < config.preciousChestCount; i++)
                 {
-                    Vector2 offset = config.spawnRadius > 0 ? Random.insideUnitCircle * config.spawnRadius : Vector2.zero;
-                    Vector3 pos = config.spawnLocation.position + (Vector3)offset;
+                    Vector3 pos = GetValidSpawnPosition(config.spawnLocation.position, config.spawnRadius, 0.6f);
                     GameObject chestObj = Instantiate(chestPrefab, pos, Quaternion.identity);
                     ChestController chest = chestObj.GetComponent<ChestController>();
                     if (chest != null) chest.SetupChest(ChestController.ChestType.Precious);
@@ -193,6 +201,7 @@ public class GameManager : MonoBehaviour
             }
         }
 
+        // 2. 刷新敌人（带安全碰撞检测，分散刷在草地上）
         if (enemySpawnPoints != null && enemySpawnPoints.Length > 0)
         {
             int todayEnemyCount = baseEnemyCount + Mathf.FloorToInt(currentDay * enemyIncreasePerDay);
@@ -202,7 +211,8 @@ public class GameManager : MonoBehaviour
                 if (enemyPrefabs.Length > 0)
                 {
                     GameObject prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
-                    Instantiate(prefab, sp.position, Quaternion.identity);
+                    Vector3 pos = GetValidSpawnPosition(sp.position, enemySpawnRadius, 0.8f);
+                    Instantiate(prefab, pos, Quaternion.identity);
                 }
             }
         }

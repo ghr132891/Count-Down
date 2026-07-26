@@ -1,22 +1,31 @@
 using UnityEngine;
 
-// 路径: Assets/Scripts/Audio/AudioManager.cs
+// Path: Assets/Scripts/Audio/AudioManager.cs
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance { get; private set; }
 
     [Header("Audio Sources")]
-    [Tooltip("用于播放循环的背景音乐")]
+    [Tooltip("拖入用于播放BGM的AudioSource")]
     public AudioSource bgmSource;
-    [Tooltip("用于播放一次性的音效")]
+    [Tooltip("拖入用于播放音效的AudioSource")]
     public AudioSource sfxSource;
+
+    [Header("Default Audio")]
+    [Tooltip("把你准备好的背景音乐拖到这里")]
+    public AudioClip defaultBGM;
+
+    // 【新增】一个可以在面板滑动的音量条，默认设为 0.2 (20%音量)
+    [Tooltip("BGM的默认音量 (0表示无声, 1表示最大)")]
+    [Range(0f, 1f)]
+    public float defaultBgmVolume = 0.2f;
 
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            // 保证切换场景时音乐不会中断
+            // 切换场景时不销毁，保证音乐连续播放
             DontDestroyOnLoad(gameObject);
         }
         else
@@ -25,23 +34,32 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    // --- 【全局音量调节接口】 ---
+    private void Start()
+    {
+        // 游戏开始时自动播放设定的 BGM
+        if (defaultBGM != null)
+        {
+            PlayBGM(defaultBGM);
+        }
+    }
+
+    // --- 以下方法保持不变 ---
     public void SetGlobalVolume(float volume)
     {
-        // 直接控制 Unity 全局音量，0 为静音，1 为最大声
+        // 控制全局音量大小
         AudioListener.volume = Mathf.Clamp01(volume);
     }
 
-    // --- 【背景音乐接口】 ---
     public void PlayBGM(AudioClip clip)
     {
         if (bgmSource == null || clip == null) return;
 
-        // 避免重复播放同一首歌
+        // 如果正在播放同一首，则不重复播放
         if (bgmSource.clip == clip && bgmSource.isPlaying) return;
 
         bgmSource.clip = clip;
-        bgmSource.loop = true;
+        bgmSource.volume = defaultBgmVolume; // 【核心修改】播放音乐时，强制把音量压低到设定值
+        bgmSource.loop = true; // 循环播放
         bgmSource.Play();
     }
 
@@ -50,8 +68,6 @@ public class AudioManager : MonoBehaviour
         if (bgmSource != null) bgmSource.Stop();
     }
 
-    // --- 【音效接口】 (为你后续开发预留) ---
-    // 其他脚本只需调用 AudioManager.Instance.PlaySFX(你的音效文件) 即可
     public void PlaySFX(AudioClip clip, float volumeMultiplier = 1f)
     {
         if (sfxSource != null && clip != null)

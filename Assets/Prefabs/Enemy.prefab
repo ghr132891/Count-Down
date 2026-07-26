@@ -227,10 +227,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   meshResolution: 30
-  roamRadius: 4
+  roamRadius: 15
   roamSpeed: 2
   roamWaitTime: 2
-  chaseSpeed: 4
+  chaseSpeed: 6
   loseTargetDistance: 6
   attackPoint: {fileID: 8378571452051551852}
   attackRange: 0.4

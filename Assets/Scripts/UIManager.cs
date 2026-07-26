@@ -38,7 +38,7 @@ public class UIManager : MonoBehaviour
             inGameVolumeSlider.onValueChanged.AddListener(OnVolumeChanged);
         }
 
-        // ShowMainMenu(); // 依据你原有的逻辑保持不变
+        ShowMainMenu(); // 依据你原有的逻辑保持不变
     }
 
     private void Update()

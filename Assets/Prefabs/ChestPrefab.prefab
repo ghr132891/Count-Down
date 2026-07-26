@@ -140,6 +140,6 @@ MonoBehaviour:
   normalScale: 2
   preciousScale: 2.5
   baseItemCount: 2
-  itemIncreasePerDay: 0.5
+  itemIncreasePerDay: 0.2
   fluctuation: 1
   openDuration: 1.5

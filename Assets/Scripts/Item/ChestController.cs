@@ -75,38 +75,25 @@ public class ChestController : MonoBehaviour
         if (GameManager.Instance == null || GameManager.Instance.survivalLootPrefabs.Length == 0) return;
 
         int currentDay = GameManager.Instance.currentDay;
-
-        // 核心数量公式：基础数量 + (天数 * 每天增量)
         int targetLootCount = baseItemCount + Mathf.FloorToInt(currentDay * itemIncreasePerDay);
-
-        // 【已删除数量翻倍逻辑，统一数量】
-
         int minLoot = Mathf.Max(1, targetLootCount - fluctuation);
         int maxLoot = targetLootCount + fluctuation + 1;
         int finalLootCount = Random.Range(minLoot, maxLoot);
 
         GameObject lootPrefab = GameManager.Instance.survivalLootPrefabs[0];
-
-        // 范围依然保持区别，因为珍贵宝箱的体型大，散开远一点不穿模
         float scatterRadius = currentType == ChestType.Precious ? 2.5f : 1.5f;
 
         for (int i = 0; i < finalLootCount; i++)
         {
-            Vector2 scatterOffset = Random.insideUnitCircle * scatterRadius;
-            Vector3 spawnPos = transform.position + new Vector3(scatterOffset.x, scatterOffset.y, 0f);
+            // 利用 GameManager 的安全算法计算掉落物位置
+            Vector3 spawnPos = GameManager.Instance.GetValidSpawnPosition(transform.position, scatterRadius, 0.4f);
 
-            // 实例化空掉落物
             GameObject lootObj = Instantiate(lootPrefab, spawnPos, Quaternion.identity);
-
-            // 【核心修改】精准控制掉落物品的品质
             InteractableLoot lootScript = lootObj.GetComponent<InteractableLoot>();
             if (lootScript != null && ItemDatabase.Instance != null)
             {
-                // 告诉数据库，我们需不需要抽取高爆率的极品装备
                 bool isPreciousChest = (currentType == ChestType.Precious);
                 ItemData rolledData = ItemDatabase.Instance.GetRandomLoot(isPreciousChest);
-
-                // 将抽到的高级数据直接灌注给地上的掉落物
                 lootScript.SetupDroppedItem(new ItemInstance(rolledData));
             }
         }
