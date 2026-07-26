@@ -2,16 +2,17 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
-// 路径: Assets/Scripts/UI/UIManager.cs
+// Path: Assets/Scripts/UI/UIManager.cs
 public class UIManager : MonoBehaviour
 {
     public static UIManager Instance { get; private set; }
 
-    [Header("UI Panels (四大面板)")]
+    [Header("UI Panels")]
     public GameObject mainMenuPanel;
     public GameObject deathPanel;
     public GameObject gameOverPanel;
     public GameObject inGameMenuPanel;
+    public GameObject victoryPanel; // 【新增】通关界面面板
 
     [Header("Volume Controls")]
     public Slider mainMenuVolumeSlider;
@@ -25,7 +26,6 @@ public class UIManager : MonoBehaviour
 
     private void Start()
     {
-        // 初始化音量滑块并绑定事件
         float currentVolume = AudioListener.volume;
         if (mainMenuVolumeSlider != null)
         {
@@ -38,46 +38,38 @@ public class UIManager : MonoBehaviour
             inGameVolumeSlider.onValueChanged.AddListener(OnVolumeChanged);
         }
 
-        // 游戏启动时，强制进入主菜单状态
-        ShowMainMenu();
+        // ShowMainMenu(); // 依据你原有的逻辑保持不变
     }
 
     private void Update()
     {
-        // 监听 ESC 键呼出/关闭游戏内菜单
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            // 如果在主菜单、死亡或失败结算界面，禁止呼出暂停菜单
-            if (mainMenuPanel.activeSelf || deathPanel.activeSelf || gameOverPanel.activeSelf) return;
+            if (mainMenuPanel.activeSelf || deathPanel.activeSelf || gameOverPanel.activeSelf || (victoryPanel != null && victoryPanel.activeSelf)) return;
 
             if (inGameMenuPanel.activeSelf) ResumeGame();
             else ShowInGameMenu();
         }
     }
 
-    // ================== 音量控制 ==================
     public void OnVolumeChanged(float value)
     {
         if (AudioManager.Instance != null) AudioManager.Instance.SetGlobalVolume(value);
-
-        // 保持主菜单和游戏内菜单的滑块刻度同步
         if (mainMenuVolumeSlider != null && mainMenuVolumeSlider.value != value) mainMenuVolumeSlider.value = value;
         if (inGameVolumeSlider != null && inGameVolumeSlider.value != value) inGameVolumeSlider.value = value;
     }
 
-    // ================== 主菜单逻辑 ==================
     public void ShowMainMenu()
     {
-        Time.timeScale = 0f; // 冻结游戏时间
+        Time.timeScale = 0f;
         CloseAllPanels();
         mainMenuPanel.SetActive(true);
     }
 
     public void StartGame()
     {
-        Time.timeScale = 1f; // 恢复游戏时间
+        Time.timeScale = 1f;
         CloseAllPanels();
-        // 因为 GameManager 默认在 Start 时开启了第一天，所以直接隐藏 UI 即可开始游玩
     }
 
     public void QuitGame()
@@ -86,7 +78,6 @@ public class UIManager : MonoBehaviour
         Application.Quit();
     }
 
-    // ================== 游戏内菜单逻辑 ==================
     public void ShowInGameMenu()
     {
         Time.timeScale = 0f;
@@ -102,12 +93,10 @@ public class UIManager : MonoBehaviour
 
     public void ReturnToMainMenu()
     {
-        // 最干净的做法：直接重新加载当前场景，重置所有状态
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
-    // ================== 死亡 UI 逻辑 ==================
     public void ShowDeathPanel()
     {
         Time.timeScale = 0f;
@@ -121,12 +110,10 @@ public class UIManager : MonoBehaviour
         CloseAllPanels();
         if (GameManager.Instance != null)
         {
-            // 呼叫 GameManager 执行复活结算
             GameManager.Instance.ExecutePlayerRespawn();
         }
     }
 
-    // ================== 游戏失败 UI 逻辑 ==================
     public void ShowGameOverPanel()
     {
         Time.timeScale = 0f;
@@ -134,12 +121,20 @@ public class UIManager : MonoBehaviour
         gameOverPanel.SetActive(true);
     }
 
-    // ================== 辅助方法 ==================
+    // 【新增】显示通关界面的方法
+    public void ShowVictoryPanel()
+    {
+        Time.timeScale = 0f; // 暂停游戏
+        CloseAllPanels();
+        if (victoryPanel != null) victoryPanel.SetActive(true);
+    }
+
     private void CloseAllPanels()
     {
         if (mainMenuPanel) mainMenuPanel.SetActive(false);
         if (deathPanel) deathPanel.SetActive(false);
         if (gameOverPanel) gameOverPanel.SetActive(false);
         if (inGameMenuPanel) inGameMenuPanel.SetActive(false);
+        if (victoryPanel) victoryPanel.SetActive(false); // 【新增】关闭面板时也关闭通关界面
     }
 }

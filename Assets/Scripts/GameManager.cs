@@ -75,7 +75,16 @@ public class GameManager : MonoBehaviour
 
     public void StartNewDay()
     {
-        if (currentDay > maxDays) return;
+        // 【核心修改】当当前天数超过最大天数时，触发通关界面
+        if (currentDay > maxDays)
+        {
+            Debug.Log("<color=yellow>Game Cleared! You survived all days!</color>");
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowVictoryPanel();
+            }
+            return;
+        }
 
         currentTime = dayDuration;
         isDayActive = true;
